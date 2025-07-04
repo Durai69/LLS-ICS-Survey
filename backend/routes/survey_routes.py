@@ -1,0 +1,258 @@
+from flask import Blueprint, request, jsonify, send_file
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func, desc
+from database import SessionLocal
+from models import Survey, Question, Option, Answer, User, Department, SurveySubmission, Permission, RemarkResponse
+from sqlalchemy.exc import IntegrityError
+from datetime import datetime, timedelta, timezone
+import pandas as pd
+import io
+
+from utils.paseto_utils import paseto_required, get_paseto_identity
+
+survey_bp = Blueprint('survey', __name__, url_prefix='/api')
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def get_rating_description(overall_rating: float) -> str:
+    if overall_rating >= 91:
+        return "Excellent - Exceeds the Customer Expectation"
+    elif overall_rating >= 75:
+        return "Satisfactory - Meets the Customer requirement"
+    elif overall_rating >= 70:
+        return "Below Average - Identify areas for improvement and initiate action to eliminate dissatisfaction"
+    else:
+        return "Poor - Identify areas for improvement and initiate action to eliminate dissatisfaction"
+
+# --- Assigned Surveys for User ---
+@survey_bp.route('/assigned-surveys', methods=['GET'])
+@paseto_required()
+def get_assigned_surveys():
+    db: Session = SessionLocal()
+    try:
+        username = get_paseto_identity()
+        user = db.query(User).filter(User.username == username).first()
+        if not user:
+            return jsonify({"detail": "User not found"}), 404
+        user_dept = db.query(Department).filter(Department.name == user.department).first()
+        if not user_dept:
+            return jsonify({"detail": "User's department not found"}), 404
+        now = datetime.now(timezone.utc)
+        allowed_perms = db.query(Permission).filter(
+            Permission.from_dept_id == user_dept.id,
+            Permission.start_date <= now,
+            Permission.end_date >= now
+        ).all()
+        allowed_dept_ids = []
+        for perm in allowed_perms:
+            # Handle self-survey
+            if perm.from_dept_id == perm.to_dept_id and not getattr(perm, "can_survey_self", False):
+                continue
+            allowed_dept_ids.append(perm.to_dept_id)
+        if not allowed_dept_ids:
+            return jsonify([])  # No assigned surveys
+        surveys = db.query(Survey).filter(Survey.rated_department_id.in_(allowed_dept_ids)).all()
+        return jsonify([
+            {
+                "id": s.id,
+                "title": s.title,
+                "description": s.description,
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+                "rated_department_id": s.rated_department_id,
+                "rated_dept_name": s.rated_department.name if s.rated_department else None,
+                "managing_department_id": s.managing_department_id,
+                "managing_dept_name": s.managing_department.name if s.managing_department else None,
+            }
+            for s in surveys
+        ])
+    finally:
+        db.close()
+
+# --- Get Survey and Questions ---
+@survey_bp.route('/surveys/<int:survey_id>', methods=['GET'])
+@paseto_required()
+def get_survey_by_id(survey_id):
+    db: Session = SessionLocal()
+    try:
+        survey = db.query(Survey).options(
+            joinedload(Survey.questions).joinedload(Question.options),
+            joinedload(Survey.managing_department),
+            joinedload(Survey.rated_department)
+        ).filter(Survey.id == survey_id).first()
+        if not survey:
+            return jsonify({"detail": "Survey not found"}), 404
+
+        questions_data = []
+        for question in survey.questions:
+            q_data = {
+                "id": question.id,
+                "text": question.text,
+                "type": question.type,
+                "order": question.order,
+                "category": question.category,
+                "options": [
+                    {"id": opt.id, "text": opt.text, "value": opt.value}
+                    for opt in question.options
+                ] if question.type == "multiple_choice" else []
+            }
+            questions_data.append(q_data)
+
+        survey_data = {
+            "id": survey.id,
+            "title": survey.title,
+            "description": survey.description,
+            "created_at": survey.created_at.isoformat() if survey.created_at else None,
+            "managing_department_id": survey.managing_department_id,
+            "rated_department_id": survey.rated_department_id,
+            "managing_dept_name": survey.managing_department.name if survey.managing_department else None,
+            "rated_dept_name": survey.rated_department.name if survey.rated_department else None,
+            "questions": sorted(questions_data, key=lambda q: q['order']),
+        }
+        return jsonify(survey_data), 200
+    finally:
+        db.close()
+
+# --- Submit Survey Response ---
+@survey_bp.route('/surveys/<int:survey_id>/submit_response', methods=['POST'])
+@paseto_required()
+def submit_survey_response(survey_id):
+    db: Session = SessionLocal()
+    try:
+        data = request.get_json()
+        username = get_paseto_identity()
+        user = db.query(User).filter(User.username == username).first()
+        if not user:
+            return jsonify({"detail": "User not found"}), 404
+        user_dept = db.query(Department).filter(Department.name == user.department).first()
+        if not user_dept:
+            return jsonify({"detail": "User's department not found."}), 404
+
+        survey = db.query(Survey).filter(Survey.id == survey_id).first()
+        if not survey:
+            return jsonify({"detail": "Survey not found."}), 404
+
+        now = datetime.now(timezone.utc)
+        is_allowed_to_survey = db.query(Permission).filter(
+            Permission.from_dept_id == user_dept.id,
+            Permission.to_dept_id == survey.rated_department_id,
+            Permission.start_date <= now,
+            Permission.end_date >= now
+        ).first()
+
+        # Handle self-survey based on permission
+        if user_dept.id == survey.rated_department_id:
+            if not is_allowed_to_survey or not getattr(is_allowed_to_survey, "can_survey_self", False):
+                return jsonify({"detail": "You cannot rate your own department unless explicitly permitted."}), 403
+        elif not is_allowed_to_survey:
+            return jsonify({"detail": "You are not authorized to rate this department."}), 403
+
+        prev = db.query(SurveySubmission).filter(
+            SurveySubmission.survey_id == survey_id,
+            SurveySubmission.submitter_user_id == user.id
+        ).first()
+        if prev:
+            return jsonify({"detail": "You have already submitted this survey."}), 409
+
+        answers = data.get('answers', [])
+        suggestion = data.get('suggestion', '')
+
+        questions = db.query(Question).filter(Question.survey_id == survey_id).all()
+        question_ids = {q.id for q in questions}
+        if len(answers) != len(questions):
+            return jsonify({"detail": "All questions must be answered."}), 400
+
+        for answer in answers:
+            qid = answer.get('id')
+            rating = answer.get('rating')
+            remarks = answer.get('remarks', '')
+            if qid not in question_ids:
+                return jsonify({"detail": f"Invalid question ID: {qid}"}), 400
+            if type(rating) is not int or rating not in [1, 2, 3, 4]:
+                return jsonify({"detail": f"Invalid rating for question {qid}: {rating}. Must be integer 1, 2, 3, or 4."}), 400
+            if rating in [1, 2] and not remarks.strip():
+                return jsonify({"detail": f"Remarks required for low rating (1 or 2) for question {qid}."}), 400
+
+        submission = SurveySubmission(
+            survey_id=survey.id,
+            submitter_user_id=user.id,
+            submitter_department_id=user_dept.id,
+            rated_department_id=survey.rated_department_id,
+            suggestions=suggestion,
+            submitted_at=datetime.now(timezone.utc)
+        )
+        db.add(submission)
+        db.flush()
+
+        for answer in answers:
+            db.add(Answer(
+                submission_id=submission.id,
+                question_id=answer['id'],
+                rating_value=answer['rating'],
+                text_response=answer.get('remarks', '')
+            ))
+
+        db.commit()
+        return jsonify({"message": "Survey submitted successfully!"}), 201
+    except IntegrityError:
+        db.rollback()
+        return jsonify({"detail": "Duplicate submission or database error."}), 400
+    except Exception as e:
+        db.rollback()
+        return jsonify({"detail": f"Error: {str(e)}"}), 500
+    finally:
+        db.close()
+
+# --- Get User's Completed Survey Submissions ---
+@survey_bp.route('/user-submissions', methods=['GET'])
+@paseto_required()
+def get_user_submissions():
+    db: Session = SessionLocal()
+    try:
+        username = get_paseto_identity()
+        user = db.query(User).filter(User.username == username).first()
+        if not user:
+            return jsonify({"detail": "User not found"}), 404
+        submissions = db.query(SurveySubmission).filter(
+            SurveySubmission.submitter_user_id == user.id
+        ).all()
+        return jsonify([
+            {
+                "id": s.id,
+                "survey_id": s.survey_id,
+                "rated_department_id": s.rated_department_id,
+                "submitted_at": s.submitted_at.isoformat() if s.submitted_at else None
+            } for s in submissions
+        ])
+    finally:
+        db.close()
+
+# --- Get All Surveys (for admin or selection) ---
+@survey_bp.route('/surveys', methods=['GET'])
+@paseto_required()
+def get_surveys():
+    db: Session = SessionLocal()
+    try:
+        surveys = db.query(Survey).options(
+            joinedload(Survey.rated_department),
+            joinedload(Survey.managing_department)
+        ).all()
+        return jsonify([
+            {
+                "id": s.id,
+                "title": s.title,
+                "description": s.description,
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+                "rated_department_id": s.rated_department_id,
+                "rated_dept_name": s.rated_department.name if s.rated_department else None,
+                "managing_department_id": s.managing_department_id,
+                "managing_dept_name": s.managing_department.name if s.managing_department else None,
+            }
+            for s in surveys
+        ])
+    finally:
+        db.close()

@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "@tanstack/react-query": "^5.79.2",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.5",
+    "axios": "^1.9.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.6.1",
+    "three": "^0.177.0"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.9.36",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.1.7"
+  }
+}
