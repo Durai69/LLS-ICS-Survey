@@ -1,4 +1,4 @@
-    // user-frontend/src/contexts/DepartmentsContext.tsx
+// user-frontend/src/contexts/DepartmentsContext.tsx
     import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
     import axios from 'axios';
 
@@ -46,8 +46,18 @@
             }
         };
 
+        // Add this function inside DepartmentsProvider
+        const ensureSurveysPopulated = async () => {
+            try {
+                await axios.post(`${API_BASE_URL}/populate-surveys-from-permissions`);
+            } catch (err) {
+                console.warn("Survey population failed or not needed:", err);
+            }
+        };
+
         useEffect(() => {
-            fetchDepartments();
+            // Then, in useEffect, call it before fetchDepartments:
+            ensureSurveysPopulated().then(fetchDepartments);
         }, []);
 
         const refreshDepartments = () => {

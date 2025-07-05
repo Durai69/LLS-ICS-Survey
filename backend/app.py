@@ -23,18 +23,18 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Import custom modules
-from security import verify_password, get_frontend_role, hash_password
-from database import SessionLocal, engine, Base
-from models import User, Department
+from backend.security import verify_password, get_frontend_role, hash_password
+from backend.database import SessionLocal, engine, Base
+from backend.models import User, Department
 
 # Import blueprints for modular routing
-from routes.user_routes import user_bp
-from routes.permission_routes import permission_bp
-from routes.survey_routes import survey_bp
-from routes.department_routes import department_bp # Assuming department_bp exists
+from backend.routes.user_routes import user_bp
+from backend.routes.permission_routes import permission_bp
+from backend.routes.survey_routes import survey_bp
+from backend.routes.department_routes import department_bp # Assuming department_bp exists
 
 # Import PASETO utilities
-from utils.paseto_utils import PASETO_KEY, paseto, paseto_required
+from backend.utils.paseto_utils import PASETO_KEY, paseto, paseto_required
 
 app = Flask(__name__)
 
@@ -56,14 +56,14 @@ PASETO_TOKEN_EXPIRES = timedelta(hours=1) # Token expires after 1 hour
 PASETO_COOKIE_NAME = 'paseto_token_cookie'
 PASETO_COOKIE_SECURE = False # Set to True in production for HTTPS
 PASETO_COOKIE_HTTPONLY = True # Keep True for security (JS cannot access)
-PASETO_COOKIE_DOMAIN = 'localhost' # Must match your frontend's hostname
+
 PASETO_COOKIE_PATH = '/'
 PASETO_COOKIE_SAMESITE = "Lax"
 
 # Debugging PASETO config
 print(f"DEBUG: PASETO_SECRET_KEY is set to: {'***KEY_IS_SET***' if PASETO_SECRET_KEY_HEX else '!!!KEY_IS_NOT_SET!!!'}")
 print(f"DEBUG: PASETO_COOKIE_NAME is: {PASETO_COOKIE_NAME}")
-print(f"DEBUG: PASETO_COOKIE_DOMAIN is: {PASETO_COOKIE_DOMAIN}")
+
 print(f"DEBUG: PASETO_COOKIE_PATH is: {PASETO_COOKIE_PATH}")
 print(f"DEBUG: PASETO_COOKIE_SAMESITE is: {PASETO_COOKIE_SAMESITE}")
 

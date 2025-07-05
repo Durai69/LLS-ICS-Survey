@@ -2,12 +2,10 @@
 import json
 from flask import Blueprint, request, jsonify, make_response
 from sqlalchemy.orm import Session
-from database import SessionLocal
-from models import User
-from security import hash_password, verify_password
-from utils.paseto_utils import PASETO_KEY, paseto, paseto_required
-# Import get_frontend_role from security.py (where it's defined)
-from security import get_frontend_role
+from backend.database import SessionLocal
+from backend.models import User
+from backend.security import hash_password, verify_password, get_frontend_role
+from backend.utils.paseto_utils import PASETO_KEY, paseto, paseto_required
 from pyseto import Paseto
 from datetime import datetime, timedelta, timezone
 

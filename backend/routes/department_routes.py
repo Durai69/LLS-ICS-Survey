@@ -1,13 +1,12 @@
 # backend/routes/department_routes.py
-from flask import Blueprint, jsonify, request # Import request if you add POST/PUT/DELETE
+from flask import Blueprint, jsonify, request
 from sqlalchemy.orm import Session
-from database import SessionLocal # Only import SessionLocal, as get_db is defined here
-from models import Department, User # Import Department, User models
-from schemas import DepartmentSchema # Import DepartmentSchema from your schemas.py
+from backend.database import SessionLocal
+from backend.models import Department, User
+from backend.schemas import DepartmentSchema
 import logging
 
-# Import PASETO decorators and getters directly from utils.paseto_utils
-from utils.paseto_utils import paseto_required, get_paseto_identity
+from backend.utils.paseto_utils import paseto_required, get_paseto_identity
 
 department_bp = Blueprint('department_routes', __name__)
 logger = logging.getLogger(__name__)

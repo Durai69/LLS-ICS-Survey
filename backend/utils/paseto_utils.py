@@ -33,7 +33,7 @@ PASETO_TOKEN_EXPIRES = timedelta(hours=1) # Token expires after 1 hour
 PASETO_COOKIE_NAME = 'paseto_token_cookie'
 PASETO_COOKIE_SECURE = False # Set to True in production for HTTPS
 PASETO_COOKIE_HTTPONLY = True # Keep True for security (JS cannot access)
-PASETO_COOKIE_DOMAIN = 'localhost' # Must match your frontend's hostname
+# PASETO_COOKIE_DOMAIN = 'localhost'  Must match your frontend's hostname
 PASETO_COOKIE_PATH = '/'
 PASETO_COOKIE_SAMESITE = "Lax"
 
@@ -74,14 +74,16 @@ def get_paseto_identity():
 # Helper to unset PASETO cookie
 def unset_paseto_cookies(response):
     response.set_cookie(PASETO_COOKIE_NAME, '', expires=0, path=PASETO_COOKIE_PATH,
-                        domain=PASETO_COOKIE_DOMAIN, secure=PASETO_COOKIE_SECURE,
+                        
+                        secure=PASETO_COOKIE_SECURE,
                         httponly=PASETO_COOKIE_HTTPONLY, samesite=PASETO_COOKIE_SAMESITE)
 
 # Helper to set PASETO cookie
 def set_paseto_cookies(response, token_value):
     response.set_cookie(PASETO_COOKIE_NAME, token_value,
                         expires=datetime.now(timezone.utc) + PASETO_TOKEN_EXPIRES,
-                        path=PASETO_COOKIE_PATH, domain=PASETO_COOKIE_DOMAIN,
+                        path=PASETO_COOKIE_PATH, 
+                        
                         secure=PASETO_COOKIE_SECURE, httponly=PASETO_COOKIE_HTTPONLY,
                         samesite=PASETO_COOKIE_SAMESITE)
 

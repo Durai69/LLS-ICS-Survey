@@ -1,16 +1,16 @@
 # F:\LLS Survey\backend\routes\permission_routes.py
 from flask import Blueprint, request, jsonify
 from sqlalchemy.orm import Session
-from database import SessionLocal
-from models import Department, Permission, User
+from backend.database import SessionLocal
+from backend.models import Department, Permission, User
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 from datetime import timezone
 
 # Import PASETO decorators and getters directly from utils.paseto_utils
-from utils.paseto_utils import paseto_required, get_paseto_identity
+from backend.utils.paseto_utils import paseto_required, get_paseto_identity
 # Import get_frontend_role from security.py (where it's defined)
-from security import get_frontend_role
+from backend.security import get_frontend_role
 
 permission_bp = Blueprint('permission_bp', __name__, url_prefix='/api')
 

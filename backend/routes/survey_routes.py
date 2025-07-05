@@ -1,14 +1,15 @@
 from flask import Blueprint, request, jsonify, send_file
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, desc
-from database import SessionLocal
-from models import Survey, Question, Option, Answer, User, Department, SurveySubmission, Permission, RemarkResponse
+from backend.database import SessionLocal
+from backend.models import Survey, Question, Option, Answer, User, Department, SurveySubmission, Permission, RemarkResponse
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timedelta, timezone
 import pandas as pd
 import io
 
-from utils.paseto_utils import paseto_required, get_paseto_identity
+from backend.utils.paseto_utils import paseto_required, get_paseto_identity
+from backend.scripts.populate_surveys_from_permissions import populate_surveys_from_permissions
 
 survey_bp = Blueprint('survey', __name__, url_prefix='/api')
 
@@ -256,3 +257,44 @@ def get_surveys():
         ])
     finally:
         db.close()
+
+# --- Create Survey ---
+@survey_bp.route('/surveys', methods=['POST'])
+@paseto_required()
+def create_survey():
+    db: Session = SessionLocal()
+    try:
+        data = request.get_json()
+        title = data.get('title')
+        description = data.get('description')
+        rated_department_id = data.get('rated_department_id')
+        managing_department_id = data.get('managing_department_id')
+
+        if not (title and rated_department_id):
+            return jsonify({"detail": "Title and rated_department_id are required"}), 400
+
+        survey = Survey(
+            title=title,
+            description=description,
+            rated_department_id=rated_department_id,
+            managing_department_id=managing_department_id
+        )
+        db.add(survey)
+        db.commit()
+        return jsonify({"message": "Survey created", "id": survey.id}), 201
+    except Exception as e:
+        db.rollback()
+        return jsonify({"detail": str(e)}), 500
+    finally:
+        db.close()
+
+# --- Populate Surveys from Permissions ---
+
+@survey_bp.route('/populate-surveys-from-permissions', methods=['POST'])
+@paseto_required()
+def api_populate_surveys_from_permissions():
+    try:
+        created = populate_surveys_from_permissions()
+        return jsonify({"message": f"Populated {created} surveys from permissions."}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

@@ -1,5 +1,6 @@
 # F:\LLS Survey\backend\models.py
-from database import Base
+
+from backend.database import Base
 from sqlalchemy import Column, Integer, String, DateTime, func, ForeignKey, UniqueConstraint, Text, Enum, Float, Boolean
 from sqlalchemy.orm import relationship
 

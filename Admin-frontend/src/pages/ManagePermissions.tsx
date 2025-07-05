@@ -321,6 +321,7 @@ const ManagePermissions = () => {
         };
 
         await axios.post<any>(`${API_BASE_URL}/permissions`, payload); // Pass the payload object directly
+        await axios.post(`${API_BASE_URL}/populate-surveys-from-permissions`); // Trigger survey population
 
         toast({
             title: "Permissions Saved",
