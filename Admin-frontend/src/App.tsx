@@ -16,6 +16,7 @@ import CustomerFocus from "@/pages/CustomerFocus";
 import AccountSettings from "@/pages/AccountSettings";
 import Login from "../../Shared/Login"; // Adjusted path to Shared folder
 import NotFound from "@/pages/NotFound";
+import ProtectedRoute from "@/contexts/ProtectedRoute";
 
 // Removed direct imports for Header and Sidebar as they are rendered within AppLayout
 
@@ -30,9 +31,8 @@ const App = () => (
         <AuthProvider>
           <DepartmentsProvider>
             <Routes>
-              
               <Route path="/login" element={<Login />} />
-              <Route element={<AppLayout />}>
+              <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                 <Route path="/" element={<Dashboard />} /> 
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/users" element={<ManageUsers />} />

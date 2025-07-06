@@ -323,6 +323,11 @@ const ManagePermissions = () => {
         await axios.post<any>(`${API_BASE_URL}/permissions`, payload); // Pass the payload object directly
         await axios.post(`${API_BASE_URL}/populate-surveys-from-permissions`); // Trigger survey population
 
+        // Refresh surveys or relevant UI here after population
+        // For example, you might fetch updated surveys or trigger a context update
+        // This is a placeholder for actual refresh logic
+        // await fetchSurveys(); // Implement fetchSurveys if needed
+
         toast({
             title: "Permissions Saved",
             description: "Your permission changes have been saved successfully",

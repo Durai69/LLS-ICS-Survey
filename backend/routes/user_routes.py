@@ -190,8 +190,9 @@ def login():
             token,
             httponly=True,
             samesite="Lax",
-            secure=False,  # Set to True if using HTTPS
-            path="/"
+            secure=False,
+            path="/",
+            domain="localhost"  # <-- Add this line if you want to be explicit
         )
         return resp
     else:

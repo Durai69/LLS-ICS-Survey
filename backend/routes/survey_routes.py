@@ -51,13 +51,19 @@ def get_assigned_surveys():
         ).all()
         allowed_dept_ids = []
         for perm in allowed_perms:
-            # Handle self-survey
             if perm.from_dept_id == perm.to_dept_id and not getattr(perm, "can_survey_self", False):
                 continue
             allowed_dept_ids.append(perm.to_dept_id)
         if not allowed_dept_ids:
-            return jsonify([])  # No assigned surveys
-        surveys = db.query(Survey).filter(Survey.rated_department_id.in_(allowed_dept_ids)).all()
+            return jsonify([])
+
+        # --- FIX: Only show surveys managed by the user's department ---
+        surveys = db.query(Survey).filter(
+            Survey.rated_department_id.in_(allowed_dept_ids),
+            Survey.managing_department_id == user_dept.id
+        ).all()
+        # -------------------------------------------------------------
+
         return jsonify([
             {
                 "id": s.id,
