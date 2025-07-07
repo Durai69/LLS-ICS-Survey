@@ -73,20 +73,14 @@ interface DepartmentMetric {
 }
 
 interface SurveyContextType {
-  surveys: SurveyData[]; // All available survey templates
-  currentSurvey: SurveyData | null; // The survey currently being filled
-  userSubmissions: UserSubmission[]; // Submissions made by the current user
-  overallStats: OverallStats | null; // New: Overall dashboard statistics
-  departmentMetrics: DepartmentMetric[]; // New: Department-wise dashboard metrics
-  fetchSurveys: () => Promise<void>;
-  fetchSurveyById: (id: number) => Promise<SurveyData | null>;
-  fetchUserSubmissions: () => Promise<void>;
-  fetchOverallDashboardStats: () => Promise<void>; // New: Fetch overall stats
-  fetchDepartmentDashboardMetrics: () => Promise<void>; // New: Fetch department metrics
-  submitSurveyResponse: (payload: any) => Promise<boolean>;
-  isLoadingSurveys: boolean;
-  isLoadingSurveyForm: boolean;
+  currentSurvey: SurveyData | null;
+  loading: boolean;
   error: string | null;
+  fetchSurveyById: (id: number) => Promise<void>;
+  submitSurveyResponse: (payload: any) => Promise<boolean>;
+  surveys: SurveyData[];
+  userSubmissions: UserSubmission[];
+  isLoadingSurveys: boolean;
 }
 
 const SurveyContext = createContext<SurveyContextType | undefined>(undefined);
@@ -122,19 +116,17 @@ export const SurveyProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // Fetch a single survey template by ID (for SurveyForm)
-  const fetchSurveyById = useCallback(async (id: number): Promise<SurveyData | null> => {
+  const fetchSurveyById = useCallback(async (id: number): Promise<void> => {
     setIsLoadingSurveyForm(true);
     setError(null);
     try {
       // Request path no longer needs /api because it's in the baseURL
       const response = await axiosInstance.get<SurveyData>(`/surveys/${id}`);
       setCurrentSurvey(response.data);
-      return response.data;
     } catch (err: any) {
       console.error(`Failed to fetch survey with ID ${id}:`, err);
       setError(err.response?.data?.detail || `Failed to load survey with ID ${id}.`);
       setCurrentSurvey(null);
-      return null;
     } finally {
       setIsLoadingSurveyForm(false);
     }
@@ -217,20 +209,14 @@ export const SurveyProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <SurveyContext.Provider value={{ 
-        surveys, 
         currentSurvey, 
-        userSubmissions, 
-        overallStats, 
-        departmentMetrics, 
-        fetchSurveys, 
+        loading: isLoadingSurveyForm, 
+        error, 
         fetchSurveyById, 
-        fetchUserSubmissions, 
-        fetchOverallDashboardStats, 
-        fetchDepartmentDashboardMetrics, 
-        submitSurveyResponse, 
-        isLoadingSurveys, 
-        isLoadingSurveyForm,
-        error 
+        submitSurveyResponse,
+        surveys,
+        userSubmissions,
+        isLoadingSurveys
     }}>
       {children}
     </SurveyContext.Provider>
@@ -244,3 +230,4 @@ export const useSurvey = (): SurveyContextType => {
   }
   return context;
 };
+

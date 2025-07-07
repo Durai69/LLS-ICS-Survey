@@ -21,7 +21,7 @@ const SurveyForm = () => {
     // Assuming departmentId from route, but for a specific survey, you might need surveyId
     // If your URL is /survey/2, then departmentId is '2'. If it's a survey ID, rename it.
     // Let's assume `departmentId` is actually the `surveyId` for now, or update your routing.
-    const { departmentId: surveyId } = useParams<{ departmentId: string }>(); // Rename departmentId to surveyId
+    const { departmentId: surveyId } = useParams<{ departmentId: string }>();
     const { currentSurvey, loading, error, fetchSurveyById, submitSurveyResponse } = useSurvey();
     const navigate = useNavigate();
     const { toast } = useToast();
@@ -33,7 +33,7 @@ const SurveyForm = () => {
 
     useEffect(() => {
         if (surveyId) {
-            fetchSurveyById(surveyId);
+            fetchSurveyById(Number(surveyId));
         }
     }, [surveyId, fetchSurveyById]);
 
@@ -113,7 +113,7 @@ const SurveyForm = () => {
             ...(finalSuggestion.trim() ? { suggestion: finalSuggestion } : {}),
         };
         
-        const success = await submitSurveyResponse(currentSurvey.id, payload); // Pass currentSurvey.id
+        const success = await submitSurveyResponse(payload);
         
         if (success) {
             navigate('/submission-success');
