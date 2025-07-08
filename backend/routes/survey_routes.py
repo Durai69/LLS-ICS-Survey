@@ -184,12 +184,30 @@ def submit_survey_response(survey_id):
             if rating in [1, 2] and not remarks.strip():
                 return jsonify({"detail": f"Remarks required for low rating (1 or 2) for question {qid}."}), 400
 
+        # Group answers by category
+        answers_by_category = {}
+        for question in questions:
+            answers_by_category[question.category] = []
+
+        for answer in answers:
+            q = next((q for q in questions if q.id == answer.get('id')), None)
+            if q:
+                answers_by_category[q.category].append({
+                    'question_id': q.id,
+                    'rating': answer.get('rating'),
+                    'remarks': answer.get('remarks', '')
+                })
+
+        import json
+        answers_by_category_json = json.dumps(answers_by_category)
+
         submission = SurveySubmission(
             survey_id=survey.id,
             submitter_user_id=user.id,
             submitter_department_id=user_dept.id,
             rated_department_id=survey.rated_department_id,
             suggestions=suggestion,
+            answers_by_category=answers_by_category_json,
             submitted_at=datetime.now(timezone.utc)
         )
         db.add(submission)

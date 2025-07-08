@@ -181,6 +181,9 @@ class SurveySubmission(Base):
     rating_description = Column(Text, nullable=True)
     suggestions = Column(Text, nullable=True)
 
+    # New column to store answers grouped by category as JSON string
+    answers_by_category = Column(Text, nullable=True)
+
     # Relationships
     survey = relationship("Survey", back_populates="submissions")
     submitter = relationship("User", back_populates="survey_submissions_made")

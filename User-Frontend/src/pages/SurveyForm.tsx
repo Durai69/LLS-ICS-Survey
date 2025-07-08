@@ -41,44 +41,61 @@ const SurveyForm = () => {
   const draftKey = `survey-draft-${departmentId || 'default'}`;
 
   useEffect(() => {
+    console.log('surveyQuestions:', surveyQuestions);
+    
+    // Initialize with default answers first
+    const defaultAnswers = surveyQuestions.map(q => ({
+      id: q.id,
+      category: q.category,
+      question: q.text,
+      rating: 0,
+      remarks: '',
+    }));
+    setAnswers(defaultAnswers);
+    
     async function fetchDraft() {
-      const res = await fetch(`/api/surveys/${departmentId}/draft`, { credentials: 'include' });
-      if (res.ok) {
-        const draft = await res.json();
-        // Merge with all questions to ensure all are present
-        setAnswers(
-          surveyQuestions.map(q => {
-            const found = draft.answers?.find((a: any) => a.id === q.id);
-            return found
-              ? { id: q.id, category: q.category, question: q.text, rating: found.rating, remarks: found.remarks }
-              : { id: q.id, category: q.category, question: q.text, rating: 0, remarks: '' };
-          })
-        );
-        if (draft.finalSuggestion !== undefined) setFinalSuggestion(draft.finalSuggestion);
-      } else {
-        setAnswers(
-          surveyQuestions.map(q => ({
-            id: q.id,
-            category: q.category,
-            question: q.text,
-            rating: 0,
-            remarks: '',
-          }))
-        );
-        setFinalSuggestion('');
+      try {
+        const res = await fetch(`/api/surveys/${departmentId}/draft`, { credentials: 'include' });
+        if (res.ok) {
+          const draft = await res.json();
+          console.log('Draft loaded:', draft);
+          if (draft.answers && draft.answers.length > 0) {
+            const mergedAnswers = surveyQuestions.map(q => {
+              const found = draft.answers?.find((a: any) => a.id === q.id);
+              return found
+                ? { id: q.id, category: q.category, question: q.text, rating: found.rating, remarks: found.remarks }
+                : { id: q.id, category: q.category, question: q.text, rating: 0, remarks: '' };
+            });
+            console.log('Merged answers:', mergedAnswers);
+            setAnswers(mergedAnswers);
+          }
+          if (draft.finalSuggestion !== undefined) setFinalSuggestion(draft.finalSuggestion);
+        }
+      } catch (error) {
+        console.error('Error fetching draft:', error);
       }
     }
-    fetchDraft();
+    
+    if (departmentId) {
+      fetchDraft();
+    }
   }, [departmentId]);
 
   const handleRatingChange = (questionId: number, rating: number) => {
     console.log(`handleRatingChange called for questionId=${questionId} with rating=${rating}`);
-    setAnswers(prev =>
-      prev.map(answer =>
+    setAnswers(prev => {
+      const updated = prev.map(answer =>
         answer.id === questionId ? { ...answer, rating } : answer
-      )
-    );
+      );
+      console.log('Updated answers:', updated);
+      return updated;
+    });
   };
+  
+  // Add useEffect to log answers state changes for debugging
+  React.useEffect(() => {
+    console.log('Answers state updated:', answers);
+  }, [answers]);
 
   const handleRemarksChange = (questionId: number, remarks: string) => {
     setAnswers(prev =>
