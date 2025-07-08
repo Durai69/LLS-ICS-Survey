@@ -304,3 +304,94 @@ def api_populate_surveys_from_permissions():
         return jsonify({"message": f"Populated {created} surveys from permissions."}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# --- Save Survey Draft ---
+@survey_bp.route('/surveys/<int:survey_id>/save_draft', methods=['POST'])
+@paseto_required()
+def save_survey_draft(survey_id):
+    db: Session = SessionLocal()
+    try:
+        data = request.get_json()
+        username = get_paseto_identity()
+        user = db.query(User).filter(User.username == username).first()
+        if not user:
+            return jsonify({"detail": "User not found"}), 404
+
+        # Find existing draft
+        draft = db.query(SurveySubmission).filter(
+            SurveySubmission.survey_id == survey_id,
+            SurveySubmission.submitter_user_id == user.id,
+            SurveySubmission.status == 'Draft'
+        ).first()
+
+        if draft:
+            # Update existing draft
+            draft.suggestions = data.get('suggestion', '')
+            draft.submitted_at = datetime.now(timezone.utc)
+            # Remove old answers and add new ones
+            db.query(Answer).filter(Answer.submission_id == draft.id).delete()
+        else:
+            # Create new draft
+            draft = SurveySubmission(
+                survey_id=survey_id,
+                submitter_user_id=user.id,
+                submitter_department_id=user.department_id,
+                rated_department_id=data.get('rated_department_id'),
+                suggestions=data.get('suggestion', ''),
+                submitted_at=datetime.now(timezone.utc),
+                status='Draft'
+            )
+            db.add(draft)
+            db.flush()
+
+        for answer in data.get('answers', []):
+            db.add(Answer(
+                submission_id=draft.id,
+                question_id=answer['id'],
+                rating_value=answer['rating'],
+                text_response=answer.get('remarks', '')
+            ))
+
+        db.commit()
+        return jsonify({"message": "Draft saved successfully!"}), 200
+    except Exception as e:
+        db.rollback()
+        return jsonify({"detail": f"Error: {str(e)}"}), 500
+    finally:
+        db.close()
+
+# --- Get Survey Draft ---
+@survey_bp.route('/surveys/<int:survey_id>/draft', methods=['GET'])
+@paseto_required()
+def get_survey_draft(survey_id):
+    db: Session = SessionLocal()
+    try:
+        username = get_paseto_identity()
+        user = db.query(User).filter(User.username == username).first()
+        if not user:
+            return jsonify({"detail": "User not found"}), 404
+
+        draft = db.query(SurveySubmission).filter(
+            SurveySubmission.survey_id == survey_id,
+            SurveySubmission.submitter_user_id == user.id,
+            SurveySubmission.status == 'Draft'
+        ).first()
+
+        if not draft:
+            return jsonify({}), 200
+
+        answers = db.query(Answer).filter(Answer.submission_id == draft.id).all()
+        answers_data = [
+            {
+                "id": a.question_id,
+                "rating": a.rating_value,
+                "remarks": a.text_response or ""
+            }
+            for a in answers
+        ]
+        return jsonify({
+            "answers": answers_data,
+            "finalSuggestion": draft.suggestions or ""
+        }), 200
+    finally:
+        db.close()

@@ -54,6 +54,9 @@ const DepartmentSelection = () => {
       return;
     }
 
+    // Save the selected department to localStorage
+    localStorage.setItem('selectedDepartment', departmentName);
+
     // Navigate to the survey form using the surveyId (template ID)
     navigate(`/survey/${surveyId}`);
   };

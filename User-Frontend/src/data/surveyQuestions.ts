@@ -1,122 +1,39 @@
-
-export interface SurveyCategory {
-  id: string;
-  name: string;
-  questions: {
-    id: string;
-    text: string;
-  }[];
+export interface SurveyQuestion {
+  id: number;
+  category: 'QUALITY' | 'DELIVERY' | 'COMMUNICATION' | 'RESPONSIVENESS' | 'IMPROVEMENT';
+  text: string;
+  type: 'rating';
+  order: number;
 }
 
-export const surveyCategories: SurveyCategory[] = [
-  {
-    id: 'quality',
-    name: 'Quality',
-    questions: [
-      {
-        id: 'q1',
-        text: 'Understands Customer needs',
-      },
-      {
-        id: 'q2',
-        text: 'Provides 100% quality parts / service / information',
-      },
-      {
-        id: 'q3',
-        text: 'Accepts responsibility for quality works',
-      },
-      {
-        id: 'q4',
-        text: 'Resolves quality issues promptly',
-      },
-    ],
-  },
-  {
-    id: 'delivery',
-    name: 'Delivery',
-    questions: [
-      {
-        id: 'q5',
-        text: 'Meets agreed deadlines',
-      },
-      {
-        id: 'q6',
-        text: 'Provides regular status updates',
-      },
-      {
-        id: 'q7',
-        text: 'Prioritizes urgent requests appropriately',
-      },
-      {
-        id: 'q8',
-        text: 'Has efficient delivery processes',
-      },
-    ],
-  },
-  {
-    id: 'communication',
-    name: 'Communication',
-    questions: [
-      {
-        id: 'q9',
-        text: 'Communicates clearly and effectively',
-      },
-      {
-        id: 'q10',
-        text: 'Responds promptly to inquiries',
-      },
-      {
-        id: 'q11',
-        text: 'Shares relevant information proactively',
-      },
-      {
-        id: 'q12',
-        text: 'Listens to and understands requirements',
-      },
-    ],
-  },
-  {
-    id: 'responsiveness',
-    name: 'Responsiveness',
-    questions: [
-      {
-        id: 'q13',
-        text: 'Responds quickly to requests',
-      },
-      {
-        id: 'q14',
-        text: 'Shows flexibility when needed',
-      },
-      {
-        id: 'q15',
-        text: 'Makes themselves available for discussions',
-      },
-      {
-        id: 'q16',
-        text: 'Takes initiative to solve problems',
-      },
-    ],
-  },
-  {
-    id: 'improvement',
-    name: 'Improvement',
-    questions: [
-      {
-        id: 'q17',
-        text: 'Continuously improves processes',
-      },
-      {
-        id: 'q18',
-        text: 'Seeks and applies feedback',
-      },
-      {
-        id: 'q19',
-        text: 'Implements innovative solutions',
-      },
-      {
-        id: 'q20',
-        text: 'Shares best practices with other teams',
-      },
-    ],
-  },
+export const surveyQuestions: SurveyQuestion[] = [
+  // QUALITY
+  { id: 1, category: 'QUALITY', text: 'Understands Customer needs', type: 'rating', order: 1 },
+  { id: 2, category: 'QUALITY', text: 'Provides 100% quality parts / service / information', type: 'rating', order: 2 },
+  { id: 3, category: 'QUALITY', text: 'Accepts responsibility for quality works', type: 'rating', order: 3 },
+  { id: 4, category: 'QUALITY', text: 'Eliminates repetitive complaints', type: 'rating', order: 4 },
+
+  // DELIVERY
+  { id: 5, category: 'DELIVERY', text: 'Fulfill 100% committed targets in service / information', type: 'rating', order: 5 },
+  { id: 6, category: 'DELIVERY', text: 'Delivers promptly on time', type: 'rating', order: 6 },
+  { id: 7, category: 'DELIVERY', text: 'Delivers to point of use', type: 'rating', order: 7 },
+  { id: 8, category: 'DELIVERY', text: 'Delivers usable parts / service / information', type: 'rating', order: 8 },
+
+  // COMMUNICATION
+  { id: 9, category: 'COMMUNICATION', text: 'Interacts with customer regularly', type: 'rating', order: 9 },
+  { id: 10, category: 'COMMUNICATION', text: 'Listens to customers views', type: 'rating', order: 10 },
+  { id: 11, category: 'COMMUNICATION', text: 'Ensures timely feedback to customers', type: 'rating', order: 11 },
+  { id: 12, category: 'COMMUNICATION', text: 'Reviews of changes with the customer', type: 'rating', order: 12 },
+
+  // RESPONSIVENESS
+  { id: 13, category: 'RESPONSIVENESS', text: 'Responds to customer complaints promptly', type: 'rating', order: 13 },
+  { id: 14, category: 'RESPONSIVENESS', text: 'Provides service when needed', type: 'rating', order: 14 },
+  { id: 15, category: 'RESPONSIVENESS', text: 'Responds quickly to changed customer needs', type: 'rating', order: 15 },
+  { id: 16, category: 'RESPONSIVENESS', text: 'Goes extra mile to help', type: 'rating', order: 16 },
+
+  // IMPROVEMENT
+  { id: 17, category: 'IMPROVEMENT', text: 'Has a positive attitude for improvement', type: 'rating', order: 17 },
+  { id: 18, category: 'IMPROVEMENT', text: 'Implements improvement', type: 'rating', order: 18 },
+  { id: 19, category: 'IMPROVEMENT', text: 'Effectiveness of improvements', type: 'rating', order: 19 },
+  { id: 20, category: 'IMPROVEMENT', text: 'Facilitates improvements at customer end', type: 'rating', order: 20 },
 ];
