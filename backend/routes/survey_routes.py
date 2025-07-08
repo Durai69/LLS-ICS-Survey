@@ -204,7 +204,7 @@ def submit_survey_response(survey_id):
             ))
 
         db.commit()
-        return jsonify({"message": "Survey submitted successfully!"}), 201
+        return jsonify({"message": "Survey submitted successfully!"}, 201)
     except IntegrityError:
         db.rollback()
         return jsonify({"detail": "Duplicate submission or database error."}), 400
@@ -317,6 +317,11 @@ def save_survey_draft(survey_id):
         if not user:
             return jsonify({"detail": "User not found"}), 404
 
+        # Get user's department
+        user_dept = db.query(Department).filter(Department.name == user.department).first()
+        if not user_dept:
+            return jsonify({"detail": "User's department not found."}), 404
+
         # Find existing draft
         draft = db.query(SurveySubmission).filter(
             SurveySubmission.survey_id == survey_id,
@@ -335,7 +340,7 @@ def save_survey_draft(survey_id):
             draft = SurveySubmission(
                 survey_id=survey_id,
                 submitter_user_id=user.id,
-                submitter_department_id=user.department_id,
+                submitter_department_id=user_dept.id,
                 rated_department_id=data.get('rated_department_id'),
                 suggestions=data.get('suggestion', ''),
                 submitted_at=datetime.now(timezone.utc),

@@ -21,13 +21,13 @@ const CATEGORIES = ['QUALITY', 'DELIVERY', 'COMMUNICATION', 'RESPONSIVENESS', 'I
 
 const SurveyForm = () => {
   const { toast } = useToast();
-  const { surveyId } = useParams<{ surveyId: string }>();
-  const { surveys } = useSurvey();
+  const { departmentId } = useParams<{ departmentId: string }>();
+  const { surveys, submitSurveyResponse } = useSurvey();
   const [answers, setAnswers] = useState<QuestionAnswer[]>([]);
   const [finalSuggestion, setFinalSuggestion] = useState('');
 
   // Get department name from survey context or fallback
-  const survey = surveys?.find(s => String(s.id) === surveyId);
+  const survey = surveys?.find(s => String(s.id) === departmentId);
   // Try all possible property names for department
   const deptName =
     survey?.rated_dept_name ||
@@ -38,11 +38,11 @@ const SurveyForm = () => {
     'Department';
 
   // Draft key for localStorage
-  const draftKey = `survey-draft-${surveyId || 'default'}`;
+  const draftKey = `survey-draft-${departmentId || 'default'}`;
 
   useEffect(() => {
     async function fetchDraft() {
-      const res = await fetch(`/api/surveys/${surveyId}/draft`, { credentials: 'include' });
+      const res = await fetch(`/api/surveys/${departmentId}/draft`, { credentials: 'include' });
       if (res.ok) {
         const draft = await res.json();
         // Merge with all questions to ensure all are present
@@ -69,9 +69,10 @@ const SurveyForm = () => {
       }
     }
     fetchDraft();
-  }, [surveyId]);
+  }, [departmentId]);
 
   const handleRatingChange = (questionId: number, rating: number) => {
+    console.log(`handleRatingChange called for questionId=${questionId} with rating=${rating}`);
     setAnswers(prev =>
       prev.map(answer =>
         answer.id === questionId ? { ...answer, rating } : answer
@@ -119,6 +120,15 @@ const SurveyForm = () => {
   const handleSubmit = async () => {
     if (!validateSurvey()) return;
 
+    if (!departmentId) {
+      toast({
+        title: 'Error',
+        description: 'Survey ID is missing.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     // Replace with actual user ID from auth context if available
     const userId = 1;
 
@@ -132,24 +142,20 @@ const SurveyForm = () => {
       ...(finalSuggestion.trim() ? { suggestion: finalSuggestion } : {}),
     };
 
-    // TODO: Replace with your actual submit logic (API call)
-    // Example:
-    // const success = await submitSurveyResponse(payload);
-    // if (success) { ... }
-
-    // Clear draft after submit
-    localStorage.removeItem(draftKey);
-
-    toast({
-      title: 'Submitted!',
-      description: 'Your survey has been submitted.',
-      variant: 'default',
-    });
-    // Optionally redirect or reset form here
+    const success = await submitSurveyResponse(Number(departmentId), payload);
+    if (success) {
+      localStorage.removeItem(draftKey);
+      toast({
+        title: 'Submitted!',
+        description: 'Your survey has been submitted.',
+        variant: 'default',
+      });
+      // Optionally reset form or redirect here
+    }
   };
 
   const handleSaveDraft = async () => {
-    await fetch(`/api/surveys/${surveyId}/save_draft`, {
+    await fetch(`/api/surveys/${departmentId}/save_draft`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -166,7 +172,7 @@ const SurveyForm = () => {
     });
   };
 
-  console.log('surveyId:', surveyId);
+  console.log('departmentId:', departmentId);
   console.log('surveys:', surveys);
   console.log('survey:', survey);
 

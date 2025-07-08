@@ -44,8 +44,8 @@ const StarRating: React.FC<StarRatingProps> = ({
               width="24"
               height="24"
               viewBox="0 0 24 24"
-              fill={index < rating ? "#9b87f5" : "none"}
-              stroke={index < rating ? "#9b87f5" : "#CCCCCC"}
+              fill={index < rating ? "#FFD700" : "none"}
+              stroke={index < rating ? "#FFD700" : "#CCCCCC"}
               strokeWidth="2"
               className="h-6 w-6"
             >

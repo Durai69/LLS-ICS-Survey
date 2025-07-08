@@ -77,7 +77,7 @@ interface SurveyContextType {
   loading: boolean;
   error: string | null;
   fetchSurveyById: (id: number) => Promise<void>;
-  submitSurveyResponse: (payload: any) => Promise<boolean>;
+  submitSurveyResponse: (surveyId: number, payload: any) => Promise<boolean>;
   surveys: SurveyData[];
   userSubmissions: UserSubmission[];
   isLoadingSurveys: boolean;
@@ -171,10 +171,10 @@ export const SurveyProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
 
-  const submitSurveyResponse = async (payload: any): Promise<boolean> => {
+  const submitSurveyResponse = async (surveyId: number, payload: any): Promise<boolean> => {
     try {
       // Request path no longer needs /api because it's in the baseURL
-      const response = await axiosInstance.post('/submit-survey', payload);
+      const response = await axiosInstance.post(`/surveys/${surveyId}/submit_response`, payload);
       toast({
         title: "Survey Submitted",
         description: (response.data as { message?: string })?.message || "Your survey has been submitted successfully!",
