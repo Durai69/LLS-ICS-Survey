@@ -81,6 +81,8 @@ interface SurveyContextType {
   surveys: SurveyData[];
   userSubmissions: UserSubmission[];
   isLoadingSurveys: boolean;
+  saveSurveyDraft: (surveyId: number, payload: any) => Promise<boolean>;
+  fetchSurveyDraft: (surveyId: number) => Promise<any | null>;
 }
 
 const SurveyContext = createContext<SurveyContextType | undefined>(undefined);
@@ -195,6 +197,35 @@ export const SurveyProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // NEW: Save survey draft
+  const saveSurveyDraft = async (surveyId: number, payload: any): Promise<boolean> => {
+    try {
+      await axiosInstance.post(`/surveys/${surveyId}/save_draft`, payload);
+      toast({
+        title: "Draft Saved",
+        description: "Your draft has been saved.",
+      });
+      return true;
+    } catch (err: any) {
+      toast({
+        title: "Draft Save Failed",
+        description: err.response?.data?.detail || "Could not save draft.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  // NEW: Fetch survey draft
+  const fetchSurveyDraft = async (surveyId: number): Promise<any | null> => {
+    try {
+      const response = await axiosInstance.get(`/surveys/${surveyId}/draft`);
+      return response.data;
+    } catch (err: any) {
+      return null;
+    }
+  };
+
 
   // Effect to fetch initial data when authenticated and auth state is ready
   useEffect(() => {
@@ -216,7 +247,9 @@ export const SurveyProvider = ({ children }: { children: ReactNode }) => {
         submitSurveyResponse,
         surveys,
         userSubmissions,
-        isLoadingSurveys
+        isLoadingSurveys,
+        saveSurveyDraft,
+        fetchSurveyDraft,
     }}>
       {children}
     </SurveyContext.Provider>

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import StarRating from '@/components/StarRating';
 import { useToast } from '@/components/ui/use-toast';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useSurvey } from '@/contexts/SurveyContext';
 
 interface QuestionAnswer {
@@ -21,7 +21,16 @@ const CATEGORIES = ['QUALITY', 'DELIVERY', 'COMMUNICATION', 'RESPONSIVENESS', 'I
 const SurveyForm = () => {
   const { toast } = useToast();
   const { departmentId } = useParams<{ departmentId: string }>();
-  const { currentSurvey, loading, error, fetchSurveyById, submitSurveyResponse } = useSurvey();
+  const navigate = useNavigate();
+  const {
+    currentSurvey,
+    loading,
+    error,
+    fetchSurveyById,
+    submitSurveyResponse,
+    saveSurveyDraft,
+    fetchSurveyDraft,
+  } = useSurvey();
   const [answers, setAnswers] = useState<QuestionAnswer[]>([]);
   const [finalSuggestion, setFinalSuggestion] = useState('');
   const draftKey = `survey_draft_${departmentId}`;
@@ -47,26 +56,35 @@ const SurveyForm = () => {
     }
   }, [currentSurvey]);
 
+  // Load draft from backend when survey loads
+  useEffect(() => {
+    const loadDraft = async () => {
+      if (departmentId && fetchSurveyDraft) {
+        const data = await fetchSurveyDraft(Number(departmentId));
+        if (data?.answers && Array.isArray(data.answers) && data.answers.length > 0) {
+          setAnswers(data.answers);
+        }
+        if (typeof data?.finalSuggestion === 'string') {
+          setFinalSuggestion(data.finalSuggestion);
+        }
+      }
+    };
+    loadDraft();
+    // eslint-disable-next-line
+  }, [departmentId, fetchSurveyDraft]);
+
   const deptName =
     currentSurvey?.rated_dept_name ||
     localStorage.getItem('selectedDepartment') ||
     'Department';
 
   const handleRatingChange = (questionId: number, rating: number) => {
-    console.log(`handleRatingChange called for questionId=${questionId} with rating=${rating}`);
-    setAnswers(prev => {
-      const updated = prev.map(answer =>
+    setAnswers(prev =>
+      prev.map(answer =>
         answer.id === questionId ? { ...answer, rating } : answer
-      );
-      console.log('Updated answers:', updated);
-      return updated;
-    });
+      )
+    );
   };
-  
-  // Add useEffect to log answers state changes for debugging
-  React.useEffect(() => {
-    console.log('Answers state updated:', answers);
-  }, [answers]);
 
   const handleRemarksChange = (questionId: number, remarks: string) => {
     setAnswers(prev =>
@@ -138,33 +156,38 @@ const SurveyForm = () => {
         description: 'Your survey has been submitted.',
         variant: 'default',
       });
-      // Optionally reset form or redirect here
+      navigate('/submission-success');
     }
   };
 
   const handleSaveDraft = async () => {
-    await fetch(`/api/surveys/${departmentId}/save_draft`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
+    if (!departmentId) return;
+    if (saveSurveyDraft) {
+      await saveSurveyDraft(Number(departmentId), {
         answers,
         suggestion: finalSuggestion,
         rated_department_id: currentSurvey?.rated_department_id,
-      }),
-    });
-    toast({
-      title: 'Draft Saved',
-      description: 'You can resume this survey later.',
-      variant: 'default',
-    });
+      });
+    } else {
+      // fallback to direct fetch if context helper not available
+      await fetch(`/api/surveys/${departmentId}/save_draft`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          answers,
+          suggestion: finalSuggestion,
+          rated_department_id: currentSurvey?.rated_department_id,
+        }),
+      });
+      toast({
+        title: 'Draft Saved',
+        description: 'You can resume this survey later.',
+        variant: 'default',
+      });
+    }
   };
 
-  // Remove undefined logs
-  console.log('departmentId:', departmentId);
-  console.log('currentSurvey:', currentSurvey);
-
-  // Optional: loading/error UI
   if (loading) {
     return <MainLayout><div>Loading...</div></MainLayout>;
   }

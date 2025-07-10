@@ -2,11 +2,9 @@ from flask import Blueprint, request, jsonify, send_file
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, desc
 from backend.database import SessionLocal
-from backend.models import Survey, Question, Option, Answer, User, Department, SurveySubmission, Permission, RemarkResponse
+from backend.models import Survey, Question, Option, Answer, User, Department, SurveySubmission, Permission
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timedelta, timezone
-import pandas as pd
-import io
 
 from backend.utils.paseto_utils import paseto_required, get_paseto_identity
 from backend.scripts.populate_surveys_from_permissions import populate_surveys_from_permissions
@@ -161,7 +159,8 @@ def submit_survey_response(survey_id):
 
         prev = db.query(SurveySubmission).filter(
             SurveySubmission.survey_id == survey_id,
-            SurveySubmission.submitter_user_id == user.id
+            SurveySubmission.submitter_user_id == user.id,
+            SurveySubmission.status != 'Draft'
         ).first()
         if prev:
             return jsonify({"detail": "You have already submitted this survey."}), 409
@@ -202,6 +201,18 @@ def submit_survey_response(survey_id):
         import json
         answers_by_category_json = json.dumps(answers_by_category)
 
+        # --- Only remove draft and its answers ONCE, before inserting new submission ---
+        draft = db.query(SurveySubmission).filter(
+            SurveySubmission.survey_id == survey_id,
+            SurveySubmission.submitter_user_id == user.id,
+            SurveySubmission.status == 'Draft'
+        ).first()
+        if draft:
+            db.query(Answer).filter(Answer.submission_id == draft.id).delete()
+            db.delete(draft)
+            db.flush()  # Keep transaction atomic
+
+        # Now insert the new submission
         submission = SurveySubmission(
             survey_id=survey.id,
             submitter_user_id=user.id,
@@ -209,7 +220,8 @@ def submit_survey_response(survey_id):
             rated_department_id=survey.rated_department_id,
             suggestions=suggestion,
             answers_by_category=answers_by_category_json,
-            submitted_at=datetime.now(timezone.utc)
+            submitted_at=datetime.now(timezone.utc),
+            status='Submitted'
         )
         db.add(submission)
         db.flush()
@@ -218,7 +230,7 @@ def submit_survey_response(survey_id):
             # Find the option ID for this rating
             option = db.query(Option).filter(
                 Option.question_id == answer['id'],
-                Option.value == str(answer['rating'])  # or int, depending on your schema
+                Option.value == str(answer['rating'])
             ).first()
             selected_option_id = option.id if option else None
 
@@ -231,7 +243,7 @@ def submit_survey_response(survey_id):
             ))
 
         db.commit()
-        return jsonify({"message": "Survey submitted successfully!"}, 201)
+        return jsonify({"message": "Survey submitted successfully!"}), 201
     except IntegrityError:
         db.rollback()
         return jsonify({"detail": "Duplicate submission or database error."}), 400
@@ -252,7 +264,8 @@ def get_user_submissions():
         if not user:
             return jsonify({"detail": "User not found"}), 404
         submissions = db.query(SurveySubmission).filter(
-            SurveySubmission.submitter_user_id == user.id
+            SurveySubmission.submitter_user_id == user.id,
+            SurveySubmission.status != 'Draft'   # Only completed submissions
         ).all()
         return jsonify([
             {

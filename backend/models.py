@@ -189,7 +189,7 @@ class SurveySubmission(Base):
     submitter = relationship("User", back_populates="survey_submissions_made")
     answers = relationship("Answer", back_populates="submission", cascade="all, delete-orphan")
     remark_responses = relationship("RemarkResponse", back_populates="survey_submission", cascade="all, delete-orphan")
-
+    status = Column(String(32), default='Submitted')  # or 'Draft', 'Submitted', etc.
     # Prevent duplicate submissions by the same user for the same survey
     __table_args__ = (UniqueConstraint('survey_id', 'submitter_user_id', name='uq_user_survey_submission'),
                       {'schema': 'dbo'})
