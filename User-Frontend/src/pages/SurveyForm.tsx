@@ -4,7 +4,6 @@ import MainLayout from '@/components/MainLayout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import StarRating from '@/components/StarRating';
-import { surveyQuestions } from '@/data/surveyQuestions';
 import { useToast } from '@/components/ui/use-toast';
 import { useParams } from 'react-router-dom';
 import { useSurvey } from '@/contexts/SurveyContext';
@@ -22,64 +21,36 @@ const CATEGORIES = ['QUALITY', 'DELIVERY', 'COMMUNICATION', 'RESPONSIVENESS', 'I
 const SurveyForm = () => {
   const { toast } = useToast();
   const { departmentId } = useParams<{ departmentId: string }>();
-  const { surveys, submitSurveyResponse } = useSurvey();
+  const { currentSurvey, loading, error, fetchSurveyById, submitSurveyResponse } = useSurvey();
   const [answers, setAnswers] = useState<QuestionAnswer[]>([]);
   const [finalSuggestion, setFinalSuggestion] = useState('');
+  const draftKey = `survey_draft_${departmentId}`;
 
-  // Get department name from survey context or fallback
-  const survey = surveys?.find(s => String(s.id) === departmentId);
-  // Try all possible property names for department
-  const deptName =
-    survey?.rated_dept_name ||
-    /*survey?.rated_department_name ||
-    survey?.department ||
-    survey?.department_name ||*/
-    localStorage.getItem('selectedDepartment') || // fallback if you store it
-    'Department';
-
-  // Draft key for localStorage
-  const draftKey = `survey-draft-${departmentId || 'default'}`;
-
+  // Fetch survey on mount or when departmentId changes
   useEffect(() => {
-    console.log('surveyQuestions:', surveyQuestions);
-    
-    // Initialize with default answers first
-    const defaultAnswers = surveyQuestions.map(q => ({
-      id: q.id,
-      category: q.category,
-      question: q.text,
-      rating: 0,
-      remarks: '',
-    }));
-    setAnswers(defaultAnswers);
-    
-    async function fetchDraft() {
-      try {
-        const res = await fetch(`/api/surveys/${departmentId}/draft`, { credentials: 'include' });
-        if (res.ok) {
-          const draft = await res.json();
-          console.log('Draft loaded:', draft);
-          if (draft.answers && draft.answers.length > 0) {
-            const mergedAnswers = surveyQuestions.map(q => {
-              const found = draft.answers?.find((a: any) => a.id === q.id);
-              return found
-                ? { id: q.id, category: q.category, question: q.text, rating: found.rating, remarks: found.remarks }
-                : { id: q.id, category: q.category, question: q.text, rating: 0, remarks: '' };
-            });
-            console.log('Merged answers:', mergedAnswers);
-            setAnswers(mergedAnswers);
-          }
-          if (draft.finalSuggestion !== undefined) setFinalSuggestion(draft.finalSuggestion);
-        }
-      } catch (error) {
-        console.error('Error fetching draft:', error);
-      }
-    }
-    
     if (departmentId) {
-      fetchDraft();
+      fetchSurveyById(Number(departmentId));
     }
-  }, [departmentId]);
+  }, [departmentId, fetchSurveyById]);
+
+  // Initialize answers when currentSurvey changes
+  useEffect(() => {
+    if (currentSurvey?.questions) {
+      const defaultAnswers = currentSurvey.questions.map(q => ({
+        id: q.id,
+        category: q.category,
+        question: q.text,
+        rating: 0,
+        remarks: '',
+      }));
+      setAnswers(defaultAnswers);
+    }
+  }, [currentSurvey]);
+
+  const deptName =
+    currentSurvey?.rated_dept_name ||
+    localStorage.getItem('selectedDepartment') ||
+    'Department';
 
   const handleRatingChange = (questionId: number, rating: number) => {
     console.log(`handleRatingChange called for questionId=${questionId} with rating=${rating}`);
@@ -179,7 +150,7 @@ const SurveyForm = () => {
       body: JSON.stringify({
         answers,
         suggestion: finalSuggestion,
-        rated_department_id: survey?.rated_department_id,
+        rated_department_id: currentSurvey?.rated_department_id,
       }),
     });
     toast({
@@ -189,9 +160,17 @@ const SurveyForm = () => {
     });
   };
 
+  // Remove undefined logs
   console.log('departmentId:', departmentId);
-  console.log('surveys:', surveys);
-  console.log('survey:', survey);
+  console.log('currentSurvey:', currentSurvey);
+
+  // Optional: loading/error UI
+  if (loading) {
+    return <MainLayout><div>Loading...</div></MainLayout>;
+  }
+  if (error) {
+    return <MainLayout><div>Error: {error}</div></MainLayout>;
+  }
 
   return (
     <MainLayout>
@@ -207,7 +186,7 @@ const SurveyForm = () => {
               <div key={category} className="mb-10">
                 <h3 className="font-bold text-xl mb-6 text-primary tracking-wide">{category}</h3>
                 <div className="space-y-8">
-                  {surveyQuestions
+                  {currentSurvey?.questions
                     .filter(q => q.category === category)
                     .map((question, idx) => {
                       const answer = answers.find(a => a.id === question.id);

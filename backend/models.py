@@ -118,7 +118,7 @@ class Question(Base):
     type = Column(Enum('rating', 'text', 'multiple_choice', name='question_type'), nullable=False)
     order = Column(Integer, nullable=False)
     # Removed category column because it does not exist in the database schema
-    # category = Column(String, nullable=True)
+    category = Column(String, nullable=True)
 
     survey = relationship("Survey", back_populates="questions")
     options = relationship("Option", back_populates="question", cascade="all, delete-orphan", order_by="Option.order")
