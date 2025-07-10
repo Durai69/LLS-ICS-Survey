@@ -10,6 +10,7 @@ import io
 
 from backend.utils.paseto_utils import paseto_required, get_paseto_identity
 from backend.scripts.populate_surveys_from_permissions import populate_surveys_from_permissions
+from backend.scripts.populate_question_options import populate_question_options_for_ratings
 
 survey_bp = Blueprint('survey', __name__, url_prefix='/api')
 
@@ -214,11 +215,19 @@ def submit_survey_response(survey_id):
         db.flush()
 
         for answer in answers:
+            # Find the option ID for this rating
+            option = db.query(Option).filter(
+                Option.question_id == answer['id'],
+                Option.value == str(answer['rating'])  # or int, depending on your schema
+            ).first()
+            selected_option_id = option.id if option else None
+
             db.add(Answer(
                 submission_id=submission.id,
                 question_id=answer['id'],
                 rating_value=answer['rating'],
-                text_response=answer.get('remarks', '')
+                text_response=answer.get('remarks', ''),
+                selected_option_id=selected_option_id
             ))
 
         db.commit()
@@ -418,3 +427,13 @@ def get_survey_draft(survey_id):
         }), 200
     finally:
         db.close()
+
+# --- Populate Question Options ---
+@survey_bp.route('/populate-question-options', methods=['POST'])
+@paseto_required()
+def api_populate_question_options():
+    try:
+        created = populate_question_options_for_ratings()
+        return jsonify({"message": f"Populated options for {created} rating questions."}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
