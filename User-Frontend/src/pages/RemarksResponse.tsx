@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import MainLayout from '@/components/MainLayout/MainLayout';
 import { Check } from 'lucide-react'; // Import the Check icon
+import { useRemarks } from '@/contexts/RemarksContext';
 
 interface IncomingFeedback {
   id: string;
@@ -30,6 +31,7 @@ interface OutgoingFeedback {
 
 const RemarksResponse = () => {
   const { toast } = useToast();
+  const { incoming, fetchIncoming, respondToFeedback } = useRemarks();
 
   // State to manage acknowledged outgoing feedback items
   const [acknowledgedItems, setAcknowledgedItems] = useState<Set<string>>(new Set());
@@ -46,7 +48,7 @@ const RemarksResponse = () => {
     {
       id: '2',
       fromDepartment: 'Mktg IA',
-      ratingGiven: 3,
+      ratingGiven: 1,
       remark: 'Communication could be improved for better coordination',
       category: 'Communication'
     },
@@ -60,7 +62,7 @@ const RemarksResponse = () => {
     {
       id: '4',
       fromDepartment: 'HR',
-      ratingGiven: 4,
+      ratingGiven: 2,
       remark: 'Great support during hiring process',
       category: 'Service Quality'
     }
@@ -71,7 +73,7 @@ const RemarksResponse = () => {
     {
       id: '1',
       department: 'QA Department',
-      rating: 2.0,
+      rating: 2,
       yourRemark: 'Delayed reports submission',
       category: 'Process Improvement',
       theirResponse: {
@@ -83,7 +85,7 @@ const RemarksResponse = () => {
     {
       id: '2',
       department: 'Mktg IA',
-      rating: 3.5,
+      rating: 1,
       yourRemark: 'Good collaboration but needs faster turnaround',
       category: 'Collaboration',
       theirResponse: {
@@ -95,7 +97,7 @@ const RemarksResponse = () => {
     {
       id: '3',
       department: 'Planning',
-      rating: 4.0,
+      rating: 2,
       yourRemark: 'Excellent strategic planning support',
       category: 'Strategic Planning',
       theirResponse: {
@@ -107,7 +109,7 @@ const RemarksResponse = () => {
     {
         id: '4',
         department: 'IT Support',
-        rating: 1.5,
+        rating: 1,
         yourRemark: 'Slow response time on ticket resolution.',
         category: 'Responsiveness',
         theirResponse: {

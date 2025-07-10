@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, send_file
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, desc
 from backend.database import SessionLocal
-from backend.models import Survey, Question, Option, Answer, User, Department, SurveySubmission, Permission
+from backend.models import Survey, Question, Option, Answer, User, Department, SurveySubmission, Permission, SurveyResponse
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timedelta, timezone
 
@@ -242,6 +242,23 @@ def submit_survey_response(survey_id):
                 selected_option_id=selected_option_id
             ))
 
+        # Insert into survey_responses for each low rating with remarks
+        for answer in answers:
+            if answer.get('rating', 0) in [1, 2] and answer.get('remarks', '').strip():
+                sr = SurveyResponse(
+                    survey_id=survey.id,
+                    user_id=user.id,
+                    survey_submission_id=submission.id,
+                    question_id=answer['id'],
+                    from_department_id=user_dept.id,
+                    to_department_id=survey.rated_department_id,
+                    rating=answer['rating'],
+                    remark=answer['remarks'],
+                    submitted_at=submission.submitted_at,
+                    acknowledged=False
+                )
+                db.add(sr)
+
         db.commit()
         return jsonify({"message": "Survey submitted successfully!"}), 201
     except IntegrityError:
@@ -398,7 +415,7 @@ def save_survey_draft(survey_id):
             ))
 
         db.commit()
-        return jsonify({"message": "Draft saved successfully!"}), 200
+        return jsonify({"message": "Draft saved successfully!"}, 200)
     except Exception as e:
         db.rollback()
         return jsonify({"detail": f"Error: {str(e)}"}), 500

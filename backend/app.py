@@ -32,6 +32,7 @@ from backend.routes.user_routes import user_bp
 from backend.routes.permission_routes import permission_bp
 from backend.routes.survey_routes import survey_bp
 from backend.routes.department_routes import department_bp # Assuming department_bp exists
+from backend.routes.remarks_routes import remarks_bp
 
 # Import PASETO utilities
 from backend.utils.paseto_utils import PASETO_KEY, paseto, paseto_required
@@ -277,6 +278,7 @@ try:
     app.register_blueprint(department_bp, url_prefix='/api')
 except NameError:
     logger.warning("Department blueprint (department_bp) not found or not imported. Skipping registration.")
+app.register_blueprint(remarks_bp)
 
 # --- Basic Home Route ---
 @app.route('/')

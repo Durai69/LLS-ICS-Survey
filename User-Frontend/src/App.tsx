@@ -6,6 +6,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext"; 
 import { DepartmentsProvider } from "@/contexts/DepartmentContext"; 
 import { SurveyProvider } from "@/contexts/SurveyContext";
+import { RemarksProvider } from '@/contexts/RemarksContext';
 
 // Import axios to configure it globally
 import axios from 'axios';
@@ -109,11 +110,13 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <DepartmentsProvider> 
       <SurveyProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <AppRoutes /> 
-        </TooltipProvider>
+        <RemarksProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <AppRoutes /> 
+          </TooltipProvider>
+        </RemarksProvider>
       </SurveyProvider>
     </DepartmentsProvider>
   </QueryClientProvider>
