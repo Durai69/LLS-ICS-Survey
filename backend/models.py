@@ -18,6 +18,7 @@ class User(Base):
     role = Column(String, default='user')
     created_at = Column(DateTime, server_default=func.now())
     is_active = Column(Boolean, default=True, nullable=False)
+    department_id = Column(Integer, ForeignKey('dbo.departments.id'), nullable=True)
 
     survey_submissions_made = relationship("SurveySubmission", back_populates="submitter")
 
@@ -200,8 +201,8 @@ class SurveyResponse(Base):
     question_id = Column(Integer, ForeignKey('dbo.questions.id'), nullable=True)
     submitted_at = Column(DateTime)
     final_suggestion = Column(Text)
-    from_department_id = Column(Integer)
-    to_department_id = Column(Integer)
+    from_department_id = Column(Integer, ForeignKey('dbo.departments.id'))  # <-- Add FK
+    to_department_id = Column(Integer, ForeignKey('dbo.departments.id'))    # <-- Add FK
     rating = Column(Integer)
     remark = Column(Text)
     explanation = Column(Text)
@@ -210,6 +211,10 @@ class SurveyResponse(Base):
     acknowledged = Column(Boolean, default=False)
     updated_at = Column(DateTime)
     responded_at = Column(DateTime, server_default=func.now(), nullable=True)
+
+    # Optional: Add relationships for easier access
+    from_department = relationship("Department", foreign_keys=[from_department_id])
+    to_department = relationship("Department", foreign_keys=[to_department_id])
 
     def __repr__(self):
         return f"<SurveyResponse(id={self.id}, survey_id={self.survey_id}, user_id={self.user_id})>"
