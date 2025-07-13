@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from backend.utils.paseto_utils import paseto_required, get_paseto_identity
 from backend.scripts.populate_surveys_from_permissions import populate_surveys_from_permissions
 from backend.scripts.populate_question_options import populate_question_options_for_ratings
+from backend.scripts.populate_questions_for_surveys import populate_questions_for_all_surveys
 
 survey_bp = Blueprint('survey', __name__, url_prefix='/api')
 
@@ -415,7 +416,7 @@ def save_survey_draft(survey_id):
             ))
 
         db.commit()
-        return jsonify({"message": "Draft saved successfully!"}, 200)
+        return jsonify({"message": "Draft saved successfully!"}), 200
     except Exception as e:
         db.rollback()
         return jsonify({"detail": f"Error: {str(e)}"}), 500
@@ -465,5 +466,15 @@ def api_populate_question_options():
     try:
         created = populate_question_options_for_ratings()
         return jsonify({"message": f"Populated options for {created} rating questions."}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# --- Populate Questions for Surveys ---
+@survey_bp.route('/populate-questions-for-surveys', methods=['POST'])
+@paseto_required()
+def api_populate_questions_for_surveys():
+    try:
+        created = populate_questions_for_all_surveys()
+        return jsonify({"message": f"Populated questions for {created} surveys."}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
