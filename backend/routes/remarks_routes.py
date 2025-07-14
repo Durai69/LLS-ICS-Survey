@@ -147,3 +147,26 @@ def acknowledge_feedback():
         return jsonify({"message": "Feedback acknowledged"})
     finally:
         db.close()
+
+# --- Customer Focus Data ---
+@remarks_bp.route('/customer-focus', methods=['GET'])
+@paseto_required()  # Or use a separate admin check if needed
+def get_customer_focus_data():
+    db: Session = SessionLocal()
+    try:
+        responses = db.query(SurveyResponse).all()
+        result = []
+        for resp in responses:
+            dept = db.query(Department).filter(Department.id == resp.to_department_id).first()
+            result.append({
+                "id": resp.id,
+                "survey_date": resp.submitted_at.strftime('%d.%m.%Y') if resp.submitted_at else "",
+                "department": dept.name if dept else "",
+                "remark": resp.remark,
+                "action_plan": resp.action_plan,
+                "responsible_person": resp.responsible_person,
+                "target_date": resp.target_date.strftime('%d.%m.%Y') if resp.target_date else "",
+            })
+        return jsonify(result)
+    finally:
+        db.close()

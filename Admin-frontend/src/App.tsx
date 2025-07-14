@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext"; // Ensure this path is correct
 import { DepartmentsProvider } from "@/contexts/DepartmentsContext";
+import { CustomerFocusProvider } from "@/contexts/CustomerFocusContext"; // Import the new provider
 
 import AppLayout from "@/components/layout/AppLayout";
 import Dashboard from "@/pages/Dashboard";
@@ -38,7 +39,11 @@ const App = () => (
                 <Route path="/users" element={<ManageUsers />} />
                 <Route path="/permissions" element={<ManagePermissions />} />
                 <Route path="/reports" element={<SurveyReports />} />
-                <Route path="/customer-focus" element={<CustomerFocus />} />
+                <Route path="/customer-focus" element={
+                  <CustomerFocusProvider>
+                    <CustomerFocus />
+                  </CustomerFocusProvider>
+                } />
                 <Route path="/account" element={<AccountSettings />} />
               </Route>
 
