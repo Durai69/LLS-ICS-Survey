@@ -63,6 +63,7 @@ def submit_feedback_response():
         explanation = data.get('explanation')
         action_plan = data.get('action_plan')
         responsible_person = data.get('responsible_person')
+        target_date = data.get('target_date')  # <-- Get from request
 
         feedback = db.query(SurveyResponse).filter(SurveyResponse.id == feedback_id).first()
         if not feedback:
@@ -71,6 +72,8 @@ def submit_feedback_response():
         feedback.explanation = explanation
         feedback.action_plan = action_plan
         feedback.responsible_person = responsible_person
+        if target_date:
+            feedback.target_date = target_date  # <-- Save to DB
         db.commit()
         return jsonify({"message": "Response submitted successfully"})
     finally:
@@ -120,7 +123,8 @@ def get_outgoing_feedback():
                     "actionPlan": fb.action_plan,
                     "responsiblePerson": fb.responsible_person
                 },
-                "acknowledged": bool(fb.acknowledged)
+                "acknowledged": bool(fb.acknowledged),
+                "target_date": fb.target_date  # <-- Add this line if not present
             })
         return jsonify(result)
     finally:

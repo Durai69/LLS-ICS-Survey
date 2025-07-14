@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/use-toast';
 import MainLayout from '@/components/MainLayout/MainLayout';
 import { Check } from 'lucide-react';
 import { useRemarks } from '@/contexts/RemarksContext';
+import { DateRangePicker } from '@/components/DateRangePicker'; // Import if not already
 
 const RemarksResponse = () => {
   const { toast } = useToast();
@@ -60,6 +61,9 @@ const RemarksResponse = () => {
     }));
   };
 
+  // New state for target date
+  const [targetDate, setTargetDate] = useState<Date | undefined>(undefined);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -86,6 +90,7 @@ const RemarksResponse = () => {
         explanation: responseForm.yourResponse,
         action_plan: responseForm.actionPlan,
         responsible_person: responseForm.responsiblePerson,
+        target_date: targetDate ? targetDate.toISOString() : undefined, // <-- Send as ISO string
       });
       toast({
         title: 'Response Submitted',
@@ -254,6 +259,17 @@ const RemarksResponse = () => {
                       />
                     </div>
 
+                    {/* New Target Date Field */}
+                    <div>
+                      <label className="block text-gray-700 font-medium mb-2">
+                        Target Date (Deadline):
+                      </label>
+                      <DateRangePicker
+                        onSelectDateRange={({ from }) => setTargetDate(from)}
+                        selectedDateRange={{ from: targetDate, to: targetDate }}
+                      />
+                    </div>
+
                     <div className="flex justify-end">
                       <Button
                         type="submit"
@@ -317,6 +333,15 @@ const RemarksResponse = () => {
                   <div className="flex flex-col sm:flex-row sm:items-start">
                     <span className="font-medium text-gray-700 min-w-[120px]">Category:</span>
                     <span className="text-gray-800">{currentOutgoingFeedback?.category}</span>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-start">
+                    <span className="font-medium text-gray-700 min-w-[120px]">Target Date:</span>
+                    <span className="text-gray-800">
+                      {currentOutgoingFeedback?.target_date
+                        ? new Date(currentOutgoingFeedback.target_date).toLocaleDateString('en-GB')
+                        : '—'}
+                    </span>
                   </div>
 
                   <div className="mt-6">

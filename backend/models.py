@@ -211,6 +211,7 @@ class SurveyResponse(Base):
     acknowledged = Column(Boolean, default=False)
     updated_at = Column(DateTime)
     responded_at = Column(DateTime, server_default=func.now(), nullable=True)
+    target_date = Column(DateTime, nullable=True)  # <-- Add this line
 
     # Optional: Add relationships for easier access
     from_department = relationship("Department", foreign_keys=[from_department_id])

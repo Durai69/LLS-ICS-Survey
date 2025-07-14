@@ -21,6 +21,15 @@ interface OutgoingFeedback {
     responsiblePerson: string;
   };
   acknowledged: boolean;
+  target_date?: string | null; // <-- Add this line
+}
+
+interface RespondPayload {
+  id: number;
+  explanation: string;
+  action_plan: string;
+  responsible_person: string;
+  target_date?: string;
 }
 
 interface RemarksContextType {
@@ -32,12 +41,7 @@ interface RemarksContextType {
   errorOutgoing: string | null;
   fetchIncoming: () => Promise<void>;
   fetchOutgoing: () => Promise<void>;
-  respondToFeedback: (payload: {
-    id: number;
-    explanation: string;
-    action_plan: string;
-    responsible_person: string;
-  }) => Promise<void>;
+  respondToFeedback: (payload: RespondPayload) => Promise<void>;
   acknowledgeFeedback: (id: number) => Promise<void>;
 }
 
@@ -78,12 +82,7 @@ export const RemarksProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const respondToFeedback = async (payload: {
-    id: number;
-    explanation: string;
-    action_plan: string;
-    responsible_person: string;
-  }) => {
+  const respondToFeedback = async (payload: RespondPayload) => {
     await axios.post('/api/remarks/respond', payload, { withCredentials: true });
     await fetchIncoming();
     await fetchOutgoing();
