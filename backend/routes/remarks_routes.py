@@ -1,8 +1,12 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy.orm import Session
 from backend.database import SessionLocal
-from backend.models import SurveyResponse, Department, User
+from backend.models import SurveyResponse, Department, User, Question
 from backend.utils.paseto_utils import paseto_required, get_paseto_identity
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 remarks_bp = Blueprint('remarks', __name__, url_prefix='/api/remarks')
 
@@ -14,25 +18,35 @@ def get_incoming_feedback():
     try:
         username = get_paseto_identity()
         user = db.query(User).filter(User.username == username).first()
-        if not user:
+        if not user or not user.department_id:
             return jsonify([])
 
-        # Get feedback for this user's department where response is not yet filled and rating is 1 or 2
+        user_dept = db.query(Department).filter(Department.id == user.department_id).first()
+        if not user_dept:
+            return jsonify([])
+
         feedbacks = db.query(SurveyResponse).filter(
-            SurveyResponse.to_department_id == user.department_id,
+            SurveyResponse.to_department_id == user_dept.id,
             SurveyResponse.rating.in_([1, 2]),
             (SurveyResponse.explanation == None) | (SurveyResponse.explanation == '')
         ).all()
 
+        # DEBUG: Print what is fetched from DB
+        print("INCOMING FEEDBACKS:", [f"{fb.id=} {fb.from_department_id=} {fb.to_department_id=} {fb.rating=} {fb.remark=} {fb.explanation=}" for fb in feedbacks])
+
         result = []
         for fb in feedbacks:
             from_dept = db.query(Department).filter(Department.id == fb.from_department_id).first()
+            category = None
+            if fb.question_id:
+                question = db.query(Question).filter(Question.id == fb.question_id).first()
+                category = question.category if question else None
             result.append({
                 "id": fb.id,
                 "fromDepartment": from_dept.name if from_dept else "Unknown",
                 "ratingGiven": fb.rating,
                 "remark": fb.remark,
-                "category": None  # Add if you have category info
+                "category": category
             })
         return jsonify(result)
     finally:
@@ -70,32 +84,43 @@ def get_outgoing_feedback():
     try:
         username = get_paseto_identity()
         user = db.query(User).filter(User.username == username).first()
-        if not user:
+        if not user or not user.department_id:
             return jsonify([])
 
-        # Get feedback where this user's department gave the low rating and response is filled
+        user_dept = db.query(Department).filter(Department.id == user.department_id).first()
+        if not user_dept:
+            return jsonify([])
+
         feedbacks = db.query(SurveyResponse).filter(
-            SurveyResponse.from_department_id == user.department_id,
+            SurveyResponse.from_department_id == user_dept.id,
             SurveyResponse.rating.in_([1, 2]),
             SurveyResponse.explanation != None,
-            SurveyResponse.explanation != ''
+            SurveyResponse.explanation != '',
+            SurveyResponse.acknowledged == False  # Only show unacknowledged
         ).all()
+
+        # DEBUG: Print what is fetched from DB
+        print("OUTGOING FEEDBACKS:", [f"{fb.id=} {fb.from_department_id=} {fb.to_department_id=} {fb.rating=} {fb.remark=} {fb.explanation=}" for fb in feedbacks])
 
         result = []
         for fb in feedbacks:
             to_dept = db.query(Department).filter(Department.id == fb.to_department_id).first()
+            category = None
+            if fb.question_id:
+                question = db.query(Question).filter(Question.id == fb.question_id).first()
+                category = question.category if question else None
             result.append({
                 "id": fb.id,
                 "department": to_dept.name if to_dept else "Unknown",
                 "rating": fb.rating,
                 "yourRemark": fb.remark,
-                "category": None,  # Add if you have category info
+                "category": category,
                 "theirResponse": {
                     "explanation": fb.explanation,
                     "actionPlan": fb.action_plan,
                     "responsiblePerson": fb.responsible_person
                 },
-                "acknowledged": fb.acknowledged
+                "acknowledged": bool(fb.acknowledged)
             })
         return jsonify(result)
     finally:

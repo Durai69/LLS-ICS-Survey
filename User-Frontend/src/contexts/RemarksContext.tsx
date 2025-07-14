@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import axios from 'axios';
 
 interface IncomingFeedback {
@@ -26,6 +26,10 @@ interface OutgoingFeedback {
 interface RemarksContextType {
   incoming: IncomingFeedback[];
   outgoing: OutgoingFeedback[];
+  loadingIncoming: boolean;
+  loadingOutgoing: boolean;
+  errorIncoming: string | null;
+  errorOutgoing: string | null;
   fetchIncoming: () => Promise<void>;
   fetchOutgoing: () => Promise<void>;
   respondToFeedback: (payload: {
@@ -42,15 +46,36 @@ const RemarksContext = createContext<RemarksContextType | undefined>(undefined);
 export const RemarksProvider = ({ children }: { children: ReactNode }) => {
   const [incoming, setIncoming] = useState<IncomingFeedback[]>([]);
   const [outgoing, setOutgoing] = useState<OutgoingFeedback[]>([]);
+  const [loadingIncoming, setLoadingIncoming] = useState(false);
+  const [loadingOutgoing, setLoadingOutgoing] = useState(false);
+  const [errorIncoming, setErrorIncoming] = useState<string | null>(null);
+  const [errorOutgoing, setErrorOutgoing] = useState<string | null>(null);
 
   const fetchIncoming = async () => {
-    const res = await axios.get('/api/remarks/incoming', { withCredentials: true });
-    setIncoming(res.data as IncomingFeedback[]);
+    setLoadingIncoming(true);
+    setErrorIncoming(null);
+    try {
+      const res = await axios.get('/api/remarks/incoming', { withCredentials: true });
+      console.log("INCOMING FEEDBACKS (from backend):", res.data); // <-- This will show in browser console
+      setIncoming(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      setErrorIncoming('Failed to fetch incoming feedback.');
+    } finally {
+      setLoadingIncoming(false);
+    }
   };
 
   const fetchOutgoing = async () => {
-    const res = await axios.get('/api/remarks/outgoing', { withCredentials: true });
-    setOutgoing(res.data as OutgoingFeedback[]);
+    setLoadingOutgoing(true);
+    setErrorOutgoing(null);
+    try {
+      const res = await axios.get('/api/remarks/outgoing', { withCredentials: true });
+      setOutgoing(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      setErrorOutgoing('Failed to fetch outgoing feedback.');
+    } finally {
+      setLoadingOutgoing(false);
+    }
   };
 
   const respondToFeedback = async (payload: {
@@ -66,14 +91,24 @@ export const RemarksProvider = ({ children }: { children: ReactNode }) => {
 
   const acknowledgeFeedback = async (id: number) => {
     await axios.post('/api/remarks/acknowledge', { id }, { withCredentials: true });
-    await fetchOutgoing();
+    // Remove the acknowledged feedback from outgoing immediately
+    setOutgoing((prev) => prev.filter((fb) => fb.id !== id));
   };
+
+  useEffect(() => {
+    fetchIncoming();
+    fetchOutgoing();
+  }, []);
 
   return (
     <RemarksContext.Provider
       value={{
         incoming,
         outgoing,
+        loadingIncoming,
+        loadingOutgoing,
+        errorIncoming,
+        errorOutgoing,
         fetchIncoming,
         fetchOutgoing,
         respondToFeedback,
