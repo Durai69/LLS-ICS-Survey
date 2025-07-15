@@ -26,7 +26,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
     { name: 'Manage Users', to: '/users', icon: Users },
     { name: 'Manage Permissions', to: '/permissions', icon: Settings },
     { name: 'Survey Reports', to: '/reports', icon: FileText },
-    { name: 'Customer Focus', to: '/customer-focus', icon: CheckSquare },
+    { name: 'ICS Action Plan', to: '/customer-focus', icon: CheckSquare },
     { name: 'Account Settings', to: '/account', icon: FileCode },
   ];
   

@@ -6,8 +6,8 @@
 
     createRoot(document.getElementById('root')!).render(
       // Wrap your main App component with the DepartmentsProvider
-      <DepartmentsProvider>
+    
         <App />
-      </DepartmentsProvider>
+      
     );
     

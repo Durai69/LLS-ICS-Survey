@@ -33,6 +33,7 @@ from backend.routes.permission_routes import permission_bp
 from backend.routes.survey_routes import survey_bp
 from backend.routes.department_routes import department_bp # Assuming department_bp exists
 from backend.routes.remarks_routes import remarks_bp
+from backend.routes.excel_routes import excel_bp
 
 # Import PASETO utilities
 from backend.utils.paseto_utils import PASETO_KEY, paseto, paseto_required
@@ -80,7 +81,6 @@ def get_db():
         db.close()
 
 # --- Custom PASETO Authentication Decorator ---
-# This replaces @jwt_required() from Flask-JWT-Extended
 def paseto_required(optional=False):
     def wrapper(fn):
         @wraps(fn)
@@ -279,6 +279,7 @@ try:
 except NameError:
     logger.warning("Department blueprint (department_bp) not found or not imported. Skipping registration.")
 app.register_blueprint(remarks_bp)
+app.register_blueprint(excel_bp)
 
 # --- Basic Home Route ---
 @app.route('/')

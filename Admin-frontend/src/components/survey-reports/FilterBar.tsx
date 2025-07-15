@@ -1,4 +1,3 @@
-
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -8,71 +7,77 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useDepartments } from '@/contexts/DepartmentsContext';
 
 interface FilterBarProps {
-  searchQuery: string;
-  setSearchQuery: (value: string) => void;
-  selectedDepartment: string;
-  setSelectedDepartment: (value: string) => void;
   selectedPeriod: string;
   setSelectedPeriod: (value: string) => void;
+  fromDept: string;
+  setFromDept: (value: string) => void;
+  toDept: string;
+  setToDept: (value: string) => void;
+  departments: string[];
+  disabled?: boolean;
 }
 
 export const FilterBar = ({
-  searchQuery,
-  setSearchQuery,
-  selectedDepartment,
-  setSelectedDepartment,
   selectedPeriod,
   setSelectedPeriod,
+  fromDept,
+  setFromDept,
+  toDept,
+  setToDept,
+  departments,
+  disabled,
 }: FilterBarProps) => {
-  const { departments } = useDepartments();
-  
   return (
     <div className="flex flex-col md:flex-row gap-4">
       {/* Filters */}
       <div className="flex items-center space-x-2 w-full md:w-auto">
         <Select
-          value={selectedDepartment}
-          onValueChange={setSelectedDepartment}
+          value={selectedPeriod}
+          onValueChange={setSelectedPeriod}
+          disabled={disabled}
         >
           <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Department" />
+            <SelectValue placeholder="Survey Period" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Departments</SelectItem>
-            {departments.map((dept) => (
+            {/* Replace with your dynamic academic year logic */}
+            <SelectItem value="">All Periods</SelectItem>
+            <SelectItem value="2025-2026 1st Survey">2025-2026 1st Survey</SelectItem>
+            <SelectItem value="2025-2026 2nd Survey">2025-2026 2nd Survey</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={fromDept}
+          onValueChange={setFromDept}
+          disabled={disabled}
+        >
+          <SelectTrigger className="w-full md:w-[180px]">
+            <SelectValue placeholder="From Department" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All Departments</SelectItem>
+            {departments.filter(Boolean).map((dept) => (
               <SelectItem key={dept} value={dept}>{dept}</SelectItem>
             ))}
           </SelectContent>
         </Select>
-        
         <Select
-          value={selectedPeriod}
-          onValueChange={setSelectedPeriod}
+          value={toDept}
+          onValueChange={setToDept}
+          disabled={disabled}
         >
           <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Survey period" />
+            <SelectValue placeholder="To Department" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all-time">All Time</SelectItem>
-            <SelectItem value="last-week">Last Week</SelectItem>
-            <SelectItem value="last-month">Last Month</SelectItem>
-            <SelectItem value="last-3-months">Last 3 Months</SelectItem>
-            <SelectItem value="last-6-months">Last 6 Months</SelectItem>
+            <SelectItem value="">All Departments</SelectItem>
+            {departments.filter(Boolean).map((dept) => (
+              <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
-        
-        <div className="relative w-full md:w-auto">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-          <Input
-            placeholder="Search Department"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9"
-          />
-        </div>
       </div>
     </div>
   );

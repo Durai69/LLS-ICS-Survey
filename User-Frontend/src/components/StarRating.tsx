@@ -56,6 +56,8 @@ const StarRating: React.FC<StarRatingProps> = ({
           <button
             key={index}
             type="button"
+            title={`Set rating to ${index + 1} star${index === 0 ? '' : 's'}`}
+            aria-label={`Set rating to ${index + 1} star${index === 0 ? '' : 's'}`}
             onClick={() => handleClick(index)}
             onMouseEnter={() => handleMouseEnter(index)}
             onMouseLeave={handleMouseLeave}

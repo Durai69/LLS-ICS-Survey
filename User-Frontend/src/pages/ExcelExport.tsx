@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import MainLayout from '@/components/MainLayout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,26 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
+import { downloadExcel } from "@/contexts/ExcelContext"; // Import the function
+
+const getSurveyPeriods = () => {
+  const SERVICE_START_YEAR = 2025;
+  const now = new Date();
+  // Academic year starts in July
+  const currentAcademicYear = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
+
+  // Only show periods from SERVICE_START_YEAR up to currentAcademicYear, max 3 years
+  const periods: string[] = [];
+  // Calculate the earliest year to show (max 3 years, but not before SERVICE_START_YEAR)
+  const earliestYear = Math.max(SERVICE_START_YEAR, currentAcademicYear - 2);
+
+  for (let year = earliestYear; year <= currentAcademicYear; year++) {
+    const nextYear = year + 1;
+    periods.unshift(`${year}-${nextYear} 2nd Survey`);
+    periods.unshift(`${year}-${nextYear} 1st Survey`);
+  }
+  return periods;
+};
 
 interface DownloadRecord {
   fileName: string;
@@ -24,31 +43,27 @@ const ExcelExport = () => {
     { fileName: 'surveys_packaging.xls', date: '14 May 2025' },
     { fileName: 'dept_rating_aug.xls', date: '14 Aug 2025' },
   ]);
+  const surveyPeriods = getSurveyPeriods(); // Show 3 years ahead
 
-  const handleDownload = (type: string) => {
+  const handleDownload = async (type: string) => {
     toast({
       title: 'Download Started',
       description: `${type} data is being downloaded.`,
     });
-    
-    // In a real app, this would trigger an actual download
-    setTimeout(() => {
-      const newRecord: DownloadRecord = {
-        fileName: `${type.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}.xls`,
-        date: new Date().toLocaleDateString('en-GB', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-        }),
-      };
-      
-      setDownloads([newRecord, ...downloads]);
-      
+
+    try {
+      await downloadExcel(type, timePeriod);
       toast({
         title: 'Download Complete',
         description: `${type} has been downloaded successfully.`,
       });
-    }, 1500);
+    } catch (err) {
+      toast({
+        title: 'Download Failed',
+        description: 'There was an error downloading the file.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleReDownload = (fileName: string) => {
@@ -91,17 +106,16 @@ const ExcelExport = () => {
 
         <div className="space-y-12">
           <div className="flex flex-col md:flex-row items-center gap-4">
-            <div className="text-lg font-medium w-48">Filter by Date Range:</div>
+            <div className="text-lg font-medium w-48">Select Survey Period:</div>
             <div className="flex-1 flex space-x-4">
               <Select value={timePeriod} onValueChange={setTimePeriod}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Time Period" />
+                  <SelectValue placeholder="Survey Period" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="last_7_days">Last 30 Days</SelectItem>
-                  <SelectItem value="last_30_days">Last 6 Months</SelectItem>
-                  <SelectItem value="last_3_months">Last 3 Months</SelectItem>
-                  <SelectItem value="last_year">Last Year</SelectItem>
+                  {surveyPeriods.map(period => (
+                    <SelectItem key={period} value={period}>{period}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Button onClick={handleApplyFilter} className="bg-primary">
@@ -112,7 +126,19 @@ const ExcelExport = () => {
 
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <div className="text-lg font-medium">My Submitted Surveys</div>
+              <div>
+                <div className="text-lg font-medium">My Submitted Surveys</div>
+                <div className="text-gray-600 text-sm max-w-xl">
+                  This file contains all details about the surveys you have submitted, including:
+                  <ul className="list-disc ml-6">
+                    <li>Survey ID, Department, Date of Submission</li>
+                    <li>All questions and answers (ratings, remarks, categories)</li>
+                    <li>Any suggestions or comments provided</li>
+                    <li>Your own details (username, department)</li>
+                  </ul>
+                  <span className="block mt-2">Purpose: Keep a complete record of your survey activity.</span>
+                </div>
+              </div>
               <Button onClick={() => handleDownload('My Submitted Surveys')} variant="outline" className="text-green-600 border-green-600">
                 Download
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -122,18 +148,23 @@ const ExcelExport = () => {
             </div>
 
             <div className="flex items-center justify-between">
-              <div className="text-lg font-medium">Department Ratings</div>
-              <Button onClick={() => handleDownload('Department Ratings')} variant="outline" className="text-green-600 border-green-600">
-                Download
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-              </Button>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="text-lg font-medium">Submitted Remarks Only</div>
-              <Button onClick={() => handleDownload('Submitted Remarks')} variant="outline" className="text-green-600 border-green-600">
+              <div>
+                <div className="text-lg font-medium">My Submitted Action Plans</div>
+                <div className="text-gray-600 text-sm max-w-xl">
+                  This file provides a detailed view of all feedback and action plans related to your submissions, including:
+                  <ul className="list-disc ml-6">
+                    <li>Who rated you and which department gave the rating</li>
+                    <li>Rating value and category</li>
+                    <li>Explanation for poor performance (if any)</li>
+                    <li>Action plan proposed by the managed department</li>
+                    <li>Responsible person for the action plan</li>
+                    <li>Target date for resolution</li>
+                    <li>Whether the managed department acknowledged the feedback</li>
+                  </ul>
+                  <span className="block mt-2">Purpose: Track all remarks, responses, and accountability for improvements.</span>
+                </div>
+              </div>
+              <Button onClick={() => handleDownload('My Submitted Action Plans')} variant="outline" className="text-green-600 border-green-600">
                 Download
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -142,41 +173,7 @@ const ExcelExport = () => {
             </div>
           </div>
 
-          <div className="space-y-4">
-            <h3 className="text-xl font-medium">Recent Downloads :</h3>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-100 text-left">
-                    <th className="px-4 py-2 border">File name</th>
-                    <th className="px-4 py-2 border">Date Downloaded</th>
-                    <th className="px-4 py-2 border">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {downloads.map((download, index) => (
-                    <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                      <td className="px-4 py-2 border">{download.fileName}</td>
-                      <td className="px-4 py-2 border">{download.date}</td>
-                      <td className="px-4 py-2 border">
-                        <button
-                          onClick={() => handleReDownload(download.fileName)}
-                          className="text-green-600 hover:text-green-800"
-                        >
-                          [Re-download]
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="text-gray-600 mt-4 text-sm">
-              Note: Data reflects your submission history and assigned departments only. Contact admin for full access.
-            </div>
-          </div>
+          
         </div>
       </div>
     </MainLayout>
