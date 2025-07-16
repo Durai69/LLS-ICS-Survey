@@ -10,6 +10,7 @@ from backend.utils.paseto_utils import paseto_required, get_paseto_identity
 from backend.scripts.populate_surveys_from_permissions import populate_surveys_from_permissions
 from backend.scripts.populate_question_options import populate_question_options_for_ratings
 from backend.scripts.populate_questions_for_surveys import populate_questions_for_all_surveys
+from backend.scripts.populate_survey_responses import calculate_overall_rating
 
 survey_bp = Blueprint('survey', __name__, url_prefix='/api')
 
@@ -254,14 +255,32 @@ def submit_survey_response(survey_id):
                     from_department_id=user_dept.id,
                     to_department_id=survey.rated_department_id,
                     rating=answer['rating'],
-                    remark=answer['remarks'],
+                    remark=answer.get('remarks', ''),
                     submitted_at=submission.submitted_at,
-                    acknowledged=False
+                    acknowledged=False,
+                    overall_rating=None  # Only set for summary row
                 )
                 db.add(sr)
 
+        # After saving all answers and before db.commit()
+        db.flush()  # <-- Add this line
+
+        # Now calculate overall_rating
+        summary_sr = SurveyResponse(
+            survey_id=survey.id,
+            user_id=user.id,
+            survey_submission_id=submission.id,
+            from_department_id=user_dept.id,
+            to_department_id=survey.rated_department_id,
+            submitted_at=submission.submitted_at,
+            acknowledged=False,
+            overall_rating=calculate_overall_rating(db, submission.id),
+            final_suggestion=suggestion if suggestion else None,
+        )
+        db.add(summary_sr)
+
         db.commit()
-        return jsonify({"message": "Survey submitted successfully!"}), 201
+        return jsonify({"message": "Survey submitted successfully!"}, 201)
     except IntegrityError:
         db.rollback()
         return jsonify({"detail": "Duplicate submission or database error."}), 400

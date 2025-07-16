@@ -201,8 +201,8 @@ class SurveyResponse(Base):
     question_id = Column(Integer, ForeignKey('dbo.questions.id'), nullable=True)
     submitted_at = Column(DateTime)
     final_suggestion = Column(Text)
-    from_department_id = Column(Integer, ForeignKey('dbo.departments.id'))  # <-- Add FK
-    to_department_id = Column(Integer, ForeignKey('dbo.departments.id'))    # <-- Add FK
+    from_department_id = Column(Integer, ForeignKey('dbo.departments.id'))
+    to_department_id = Column(Integer, ForeignKey('dbo.departments.id'))
     rating = Column(Integer)
     remark = Column(Text)
     explanation = Column(Text)
@@ -211,7 +211,8 @@ class SurveyResponse(Base):
     acknowledged = Column(Boolean, default=False)
     updated_at = Column(DateTime)
     responded_at = Column(DateTime, server_default=func.now(), nullable=True)
-    target_date = Column(DateTime, nullable=True)  # <-- Add this line
+    target_date = Column(DateTime, nullable=True)
+    overall_rating = Column(Float, nullable=True)
 
     # Optional: Add relationships for easier access
     from_department = relationship("Department", foreign_keys=[from_department_id])
