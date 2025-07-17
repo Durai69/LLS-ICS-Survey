@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { DepartmentsProvider } from "@/contexts/DepartmentContext"; 
 import { SurveyProvider } from "@/contexts/SurveyContext";
 import { RemarksProvider } from '@/contexts/RemarksContext';
+import { DashboardProvider } from './contexts/DashboardContext';
 
 // Import axios to configure it globally
 import axios from 'axios';
@@ -108,14 +109,16 @@ const AppRoutes = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <DepartmentsProvider> 
+    <DepartmentsProvider>
       <SurveyProvider>
         <RemarksProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <AppRoutes /> 
-          </TooltipProvider>
+          <DashboardProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <AppRoutes />
+            </TooltipProvider>
+          </DashboardProvider>
         </RemarksProvider>
       </SurveyProvider>
     </DepartmentsProvider>

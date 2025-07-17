@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'; // Added useMemo
 import MainLayout from '@/components/MainLayout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSurvey } from '@/contexts/SurveyContext'; // Use useSurvey to get surveys and userSubmissions
+import { useDashboard } from '@/contexts/DashboardContext';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -11,6 +12,7 @@ import { Button } from '@/components/ui/button';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { departmentRatings, loading: loadingRatings } = useDashboard();
   // Destructure surveys and userSubmissions directly from useSurvey()
   const { surveys, userSubmissions, isLoadingSurveys } = useSurvey(); 
   const navigate = useNavigate();
@@ -34,25 +36,14 @@ const Dashboard = () => {
   const progress = getSurveyProgress; // Now it's a direct object from the useMemo
   const progressPercentage = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
 
-  // --- DUMMY DATA FOR DEPARTMENT RATINGS (AS REQUESTED TO KEEP IT AS IS) ---
-  const departmentRatings = [
-    { name: 'IT', rating: 85 },
-    { name: 'HR', rating: 90 },
-    { name: 'QA', rating: 85 },
-    { name: 'SCM', rating: 70 },
-    { name: 'TPM', rating: 88 },
-    { name: 'CSD', rating: 95 },
-  ];
-
   const handleBarClick = (data: any) => {
     if (data.rating < 80) {
-      console.log(`Clicked on ${data.name} with low rating: ${data.rating}`);
       navigate('/remarks-response');
     }
   };
 
   // Add loading state for the dashboard itself, using the loading states from contexts
-  if (isLoadingSurveys) {
+  if (isLoadingSurveys || loadingRatings) {
     return (
       <MainLayout title="Dashboard">
         <div className="flex justify-center items-center h-screen text-lg">
