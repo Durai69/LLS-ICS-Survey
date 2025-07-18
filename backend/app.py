@@ -31,7 +31,7 @@ from backend.models import User, Department
 from backend.routes.user_routes import user_bp
 from backend.routes.permission_routes import permission_bp
 from backend.routes.survey_routes import survey_bp
-from backend.routes.department_routes import department_bp # Assuming department_bp exists
+from backend.routes.department_routes import department_bp
 from backend.routes.remarks_routes import remarks_bp
 from backend.routes.excel_routes import excel_bp
 from backend.routes.dashboard_route import dashboard_bp

@@ -1,7 +1,7 @@
 # populate_departments.py
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine
-from models import Base, Department # Import Base and Department models
+from backend.models import Base, Department # Import Base and Department models
 
 # Ensure tables are created if they don't exist
 Base.metadata.create_all(bind=engine)

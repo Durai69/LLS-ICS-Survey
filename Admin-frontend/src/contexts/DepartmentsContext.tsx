@@ -1,8 +1,8 @@
-    import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
     import axios from 'axios';
 
     // IMPORTANT: WITH /api prefix here, as these routes are part of a blueprint
-    const API_BASE_URL = 'http://127.0.0.1:5000/api'; 
+    const API_BASE_URL = 'http://localhost:5000/api'; 
 
     // Configure Axios instance to always send cookies
     const axiosInstance = axios.create({
@@ -33,7 +33,8 @@
             setLoading(true);
             setError(null);
             try {
-                const response = await axiosInstance.get<Department[]>('/departments'); 
+                const response = await axiosInstance.get<Department[]>('/departments');
+                console.log("Fetched departments:", response.data);
                 setDepartments(response.data);
             } catch (err: any) {
                 console.error("Failed to fetch departments:", err);

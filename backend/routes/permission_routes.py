@@ -23,46 +23,6 @@ def get_db():
         db.close()
 
 # GET all departments (for admin matrix headers/rows)
-@permission_bp.route('/departments', methods=['GET'])
-@paseto_required(optional=True)
-def get_departments():
-    db: Session = next(get_db())
-    departments = db.query(Department).order_by(Department.name).all()
-    
-    departments_data = [{"id": dept.id, "name": dept.name} for dept in departments]
-    return jsonify(departments_data), 200
-
-# POST (Create) a new department (likely used elsewhere, but kept here)
-@permission_bp.route('/departments', methods=['POST'])
-@paseto_required()
-def create_department():
-    data = request.get_json()
-    dept_name = data.get('name')
-
-    if not dept_name:
-        return jsonify({"message": "Department name is required"}), 400
-
-    db: Session = next(get_db())
-    try:
-        existing_dept = db.query(Department).filter(Department.name.ilike(dept_name)).first()
-        if existing_dept:
-            return jsonify({"message": f"Department '{dept_name}' already exists"}), 409
-
-        new_dept = Department(name=dept_name)
-        db.add(new_dept)
-        db.commit()
-        db.refresh(new_dept)
-        return jsonify({"id": new_dept.id, "name": new_dept.name}), 201
-    except IntegrityError:
-        db.rollback()
-        return jsonify({"message": "Database integrity error. Department might already exist (duplicate)."}), 409
-    except Exception as e:
-        db.rollback()
-        print(f"Error creating department: {e}")
-        return jsonify({"message": f"Internal server error: {str(e)}"}), 500
-    finally:
-        db.close()
-
 # GET existing permissions (for populating the admin matrix on load)
 @permission_bp.route('/permissions', methods=['GET'])
 @paseto_required()
