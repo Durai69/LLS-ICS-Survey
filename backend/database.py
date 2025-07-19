@@ -15,7 +15,13 @@ DATABASE_URL = (
 
 # Create the SQLAlchemy engine
 # echo=True will print all SQL statements, useful for debugging
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(
+    DATABASE_URL,
+    echo=True,
+    pool_size=20,        # default is 5
+    max_overflow=20,     # default is 10
+    pool_timeout=30      # seconds
+)
 
 # Create a SessionLocal class for database sessions
 # Each request will get its own database session

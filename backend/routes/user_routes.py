@@ -3,7 +3,7 @@ import json
 from flask import Blueprint, request, jsonify, make_response
 from sqlalchemy.orm import Session
 from backend.database import SessionLocal
-from backend.models import User
+from backend.models import User, Department
 from backend.security import hash_password, verify_password, get_frontend_role
 from backend.utils.paseto_utils import PASETO_KEY, paseto, paseto_required
 from pyseto import Paseto
@@ -131,10 +131,21 @@ def delete_user(user_id):
     if not user:
         return jsonify({"message": "User not found"}), 404
 
+    dept_name = user.department  # Save department name before deleting user
+
     db.delete(user)
     db.commit()
 
-    return jsonify({"message": "User deleted successfully"}), 200
+    # After deleting the user, check if any users remain in that department
+    remaining_users = db.query(User).filter(User.department == dept_name).count()
+    if remaining_users == 0:
+        # No users left, delete the department
+        dept = db.query(Department).filter(Department.name == dept_name).first()
+        if dept:
+            db.delete(dept)
+            db.commit()
+
+    return jsonify({"message": "User (and possibly department) deleted successfully"}), 200
 
 # Example function to demonstrate PASETO token encoding
 def create_paseto_token(payload):
