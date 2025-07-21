@@ -30,7 +30,12 @@ const AccountSettings = () => {
     confirmPassword: '',
   });
   
-  const handlePasswordChange = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const handlePasswordChange = async () => {
     // Reset errors
     setErrors({
       currentPassword: '',
@@ -43,9 +48,6 @@ const AccountSettings = () => {
     // Simple validation
     if (!passwords.currentPassword) {
       setErrors((prev) => ({ ...prev, currentPassword: 'Current password is required' }));
-      hasErrors = true;
-    } else if (passwords.currentPassword !== 'password') {
-      setErrors((prev) => ({ ...prev, currentPassword: 'Current password is incorrect' }));
       hasErrors = true;
     }
     
@@ -69,19 +71,49 @@ const AccountSettings = () => {
       return;
     }
     
-    // Success case
-    toast({
-      title: "Password Updated",
-      description: "Your password has been changed successfully",
-    });
-    
-    setPasswords({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    });
-    
-    setIsEditingPassword(false);
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/users/${user.id}/password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          currentPassword: passwords.currentPassword,
+          newPassword: passwords.newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Password Updated",
+          description: data.message || "Your password has been changed successfully",
+        });
+        setPasswords({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        });
+        setIsEditingPassword(false);
+      } else {
+        toast({
+          title: "Error",
+          description: data.message || "Failed to change password",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   return (
@@ -174,40 +206,64 @@ const AccountSettings = () => {
             <DialogTitle>Change Password</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="space-y-2">
+            <div className="space-y-2 relative">
               <Label htmlFor="current-password">Current Password</Label>
               <Input
                 id="current-password"
-                type="password"
+                type={showCurrentPassword ? 'text' : 'password'}
                 value={passwords.currentPassword}
                 onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
               />
+              <button
+                type="button"
+                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                className="absolute right-2 top-8 text-gray-500 hover:text-gray-700"
+                aria-label={showCurrentPassword ? 'Hide current password' : 'Show current password'}
+              >
+                {showCurrentPassword ? '🙈' : '👁️'}
+              </button>
               {errors.currentPassword && (
                 <p className="text-sm text-red-500">{errors.currentPassword}</p>
               )}
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-2 relative">
               <Label htmlFor="new-password">New Password</Label>
               <Input
                 id="new-password"
-                type="password"
+                type={showNewPassword ? 'text' : 'password'}
                 value={passwords.newPassword}
                 onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
               />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+                className="absolute right-2 top-8 text-gray-500 hover:text-gray-700"
+                aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
+              >
+                {showNewPassword ? '🙈' : '👁️'}
+              </button>
               {errors.newPassword && (
                 <p className="text-sm text-red-500">{errors.newPassword}</p>
               )}
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-2 relative">
               <Label htmlFor="confirm-password">Confirm New Password</Label>
               <Input
                 id="confirm-password"
-                type="password"
+                type={showConfirmPassword ? 'text' : 'password'}
                 value={passwords.confirmPassword}
                 onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-2 top-8 text-gray-500 hover:text-gray-700"
+                aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+              >
+                {showConfirmPassword ? '🙈' : '👁️'}
+              </button>
               {errors.confirmPassword && (
                 <p className="text-sm text-red-500">{errors.confirmPassword}</p>
               )}
@@ -217,7 +273,9 @@ const AccountSettings = () => {
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <Button onClick={handlePasswordChange}>Update Password</Button>
+            <Button onClick={handlePasswordChange} disabled={isLoading}>
+              {isLoading ? 'Updating...' : 'Update Password'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
