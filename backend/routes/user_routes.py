@@ -147,6 +147,32 @@ def delete_user(user_id):
 
     return jsonify({"message": "User (and possibly department) deleted successfully"}), 200
 
+# PUT route to change password
+@user_bp.route('/users/<int:user_id>/password', methods=['PUT'])
+@paseto_required()
+def change_password(user_id):
+    data = request.get_json()
+    current_password = data.get('currentPassword')
+    new_password = data.get('newPassword')
+
+    if not current_password or not new_password:
+        return jsonify({"message": "Current password and new password are required"}), 400
+
+    db: Session = next(get_db())
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    if not verify_password(current_password, user.hashed_password):
+        return jsonify({"message": "Current password is incorrect"}), 401
+
+    user.hashed_password = hash_password(new_password)
+    db.commit()
+    db.refresh(user)
+
+    return jsonify({"message": "Password updated successfully"}), 200
+
 # Example function to demonstrate PASETO token encoding
 def create_paseto_token(payload):
     """

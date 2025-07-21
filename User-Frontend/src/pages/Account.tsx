@@ -23,7 +23,9 @@ const Account = () => {
     navigate('/');
   };
 
-  const handleChangePassword = () => {
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       toast({
         title: 'Validation Error',
@@ -42,18 +44,47 @@ const Account = () => {
       return;
     }
 
-    // Here you would make an API call to change the password
-    // For this demo, we'll just show a success message
-    setIsChangePasswordModalOpen(false);
-    
-    toast({
-      title: 'Password Changed Successfully.',
-      description: 'Your password has been updated.',
-    });
-    
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/users/${user.id}/password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          currentPassword: currentPassword,
+          newPassword: newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setIsChangePasswordModalOpen(false);
+        toast({
+          title: 'Password Changed Successfully.',
+          description: data.message || 'Your password has been updated.',
+        });
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        toast({
+          title: 'Error',
+          description: data.message || 'Failed to change password.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!user) {
