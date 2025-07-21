@@ -279,6 +279,11 @@ def submit_survey_response(survey_id):
         )
         db.add(summary_sr)
 
+        # --- FIX: Update super_overall for the rated department ---
+        db.flush()  # Ensure summary_sr is written before calculating average
+        update_super_overall_for_department(db, survey.rated_department_id)
+        # ---------------------------------------------------------
+
         db.commit()
         return jsonify({"message": "Survey submitted successfully!"}, 201)
     except IntegrityError:
@@ -497,3 +502,17 @@ def api_populate_questions_for_surveys():
         return jsonify({"message": f"Populated questions for {created} surveys."}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+from sqlalchemy.orm import Session
+from backend.models import SurveyResponse
+
+def update_super_overall_for_department(db: Session, department_id: int):
+    # Calculate the average overall_rating for this department
+    avg = db.query(func.avg(SurveyResponse.overall_rating))\
+        .filter(SurveyResponse.to_department_id == department_id, SurveyResponse.overall_rating != None)\
+        .scalar()
+    # Update all survey_responses for this department with the new super_overall
+    db.query(SurveyResponse)\
+        .filter(SurveyResponse.to_department_id == department_id)\
+        .update({SurveyResponse.super_overall: avg}, synchronize_session=False)
+    db.commit()

@@ -64,28 +64,43 @@ const Dashboard = () => {
           {/* Department Performance Overview Card */}
           <Card className="col-span-1 lg:col-span-2 shadow-lg">
             <CardHeader>
-              <CardTitle className="text-lg font-semibold text-gray-700">Department Performance Overview</CardTitle>
+              <CardTitle className="text-lg font-semibold text-gray-700">
+                {user?.department
+                  ? `${user.department} Department Performance Overview`
+                  : 'Department Performance Overview'}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={departmentRatings} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="name" />
-                    <YAxis domain={[0, 100]} ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]} />
-                    <Tooltip />
-                    <Bar dataKey="rating" onClick={handleBarClick}>
-                      {departmentRatings.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={entry.rating < 80 ? '#FF6B6B' : '#e5e7ff'} 
-                          stroke={entry.rating >= 80 ? '#9b87f5' : '#FF6B6B'} 
-                          strokeWidth={1}
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="w-full flex justify-start">
+                <div className="w-[400px] h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={departmentRatings}
+                      margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
+                      barCategoryGap={30}
+                      // This keeps the bars and Y-axis left-aligned
+                    >y
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="name" />
+                      <YAxis domain={[0, 100]} ticks={[0, 20, 40, 60, 80, 100]} />
+                      <Tooltip
+                        wrapperStyle={{ display: departmentRatings.length === 0 ? 'none' : undefined }}
+                      />
+                      {departmentRatings.length > 0 && (
+                        <Bar dataKey="rating" onClick={handleBarClick}>
+                          {departmentRatings.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={entry.rating < 80 ? '#FF6B6B' : '#e5e7ff'}
+                              stroke={entry.rating >= 80 ? '#9b87f5' : '#FF6B6B'}
+                              strokeWidth={1}
+                            />
+                          ))}
+                        </Bar>
+                      )}
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
               <div className="text-sm text-muted-foreground mt-2">
                 *Click on Red Bar to view the remarks / improvement suggestions

@@ -213,6 +213,7 @@ class SurveyResponse(Base):
     responded_at = Column(DateTime, server_default=func.now(), nullable=True)
     target_date = Column(DateTime, nullable=True)
     overall_rating = Column(Float, nullable=True)
+    super_overall = Column(Float, nullable=True)
 
     # Optional: Add relationships for easier access
     from_department = relationship("Department", foreign_keys=[from_department_id])

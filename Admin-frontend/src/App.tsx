@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext"; // Ensure this path is correct
 import { DepartmentsProvider } from "@/contexts/DepartmentsContext";
 import { CustomerFocusProvider } from "@/contexts/CustomerFocusContext"; // Import the new provider
+import { AdminDashboardProvider } from "@/contexts/AdminDashboardContext";
 
 import AppLayout from "@/components/layout/AppLayout";
 import Dashboard from "@/pages/Dashboard";
@@ -34,8 +35,16 @@ const App = () => (
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-                <Route path="/" element={<Dashboard />} /> 
-                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/" element={
+                  <AdminDashboardProvider>
+                    <Dashboard />
+                  </AdminDashboardProvider>
+                } /> 
+                <Route path="/dashboard" element={
+                  <AdminDashboardProvider>
+                    <Dashboard />
+                  </AdminDashboardProvider>
+                } />
                 <Route path="/users" element={<ManageUsers />} />
                 <Route path="/permissions" element={<ManagePermissions />} />
                 <Route path="/reports" element={<SurveyReports />} />
