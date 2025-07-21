@@ -112,9 +112,15 @@ const AccountSettings = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Department</Label>
-                <div className="p-2 bg-gray-50 rounded-md">{user?.department}</div>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Department</Label>
+                  <div className="p-2 bg-gray-50 rounded-md">{user?.department}</div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Username</Label>
+                  <div className="p-2 bg-gray-50 rounded-md">{user?.username}</div>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Role</Label>
