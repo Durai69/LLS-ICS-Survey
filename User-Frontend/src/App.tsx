@@ -29,9 +29,9 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// ProtectedRoute component to guard routes that require authentication
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+// ProtectedRoute component to guard routes that require authentication and role-based access
+const ProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element; allowedRoles?: string[] }) => {
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -43,6 +43,10 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && user && !allowedRoles.includes(user.role.toLowerCase())) {
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return children;

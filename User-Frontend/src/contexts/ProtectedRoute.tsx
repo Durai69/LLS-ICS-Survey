@@ -3,12 +3,12 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext'; // Adjust path if necessary
 
 interface ProtectedRouteProps {
-  // You can add roles here if needed, e.g., allowedRoles?: string[];
+  allowedRoles?: string[];
   children?: React.ReactNode; // For wrapping components
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth(); // Get auth state from context
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+  const { isAuthenticated, isLoading, user } = useAuth(); // Get auth state from context
 
   if (isLoading) {
     // You might want to render a loading spinner here
@@ -18,6 +18,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   if (!isAuthenticated) {
     // User is not authenticated, redirect to the login page
     return <Navigate to="/" replace />; // Redirect to "/" which is your login page
+  }
+
+  if (allowedRoles && user && !allowedRoles.includes(user.role.toLowerCase())) {
+    return <Navigate to="/unauthorized" replace />;
   }
 
   // User is authenticated, render the children or the Outlet (if used in a parent route)

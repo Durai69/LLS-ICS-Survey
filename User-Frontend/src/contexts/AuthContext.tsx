@@ -116,6 +116,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (response.ok) {
         const loggedInUser: User = data.user;
+        if (loggedInUser.role.toLowerCase() !== 'user') {
+          toast({
+            title: "Login Failed",
+            description: "Only User can login into User Portal.",
+            variant: "destructive",
+          });
+          setUser(null);
+          setIsAuthenticated(false);
+          localStorage.removeItem(AUTH_LOCAL_STORAGE_KEY);
+          return null;
+        }
         setUser(loggedInUser);
         setIsAuthenticated(true);
         localStorage.setItem(AUTH_LOCAL_STORAGE_KEY, JSON.stringify(loggedInUser));
@@ -123,7 +134,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           title: "Login Successful",
           description: `Welcome, ${loggedInUser.name}!`,
         });
-        navigate('/dashboard'); // Navigate to dashboard after successful login
+        navigate('/dashboard');
         return loggedInUser;
       } else {
         toast({

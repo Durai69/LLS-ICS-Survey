@@ -34,7 +34,7 @@ const App = () => (
           <DepartmentsProvider>
             <Routes>
               <Route path="/login" element={<Login />} />
-              <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+              <Route element={<ProtectedRoute allowedRoles={['admin']}><AppLayout /></ProtectedRoute>}>
                 <Route path="/" element={
                   <AdminDashboardProvider>
                     <Dashboard />
