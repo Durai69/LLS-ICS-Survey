@@ -154,18 +154,25 @@ def acknowledge_feedback():
 def get_customer_focus_data():
     db: Session = SessionLocal()
     try:
-        responses = db.query(SurveyResponse).all()
+        responses = db.query(SurveyResponse).filter(
+            SurveyResponse.rating.in_([1, 2]),
+            SurveyResponse.remark != None,
+            SurveyResponse.remark != ''
+        ).all()
         result = []
         for resp in responses:
-            dept = db.query(Department).filter(Department.id == resp.to_department_id).first()
+            to_dept = db.query(Department).filter(Department.id == resp.to_department_id).first()
+            from_dept = db.query(Department).filter(Department.id == resp.from_department_id).first()
             result.append({
                 "id": resp.id,
                 "survey_date": resp.submitted_at.strftime('%d.%m.%Y') if resp.submitted_at else "",
-                "department": dept.name if dept else "",
+                "toDepartment": to_dept.name if to_dept else "",
+                "fromDepartment": from_dept.name if from_dept else "",
                 "remark": resp.remark,
                 "action_plan": resp.action_plan,
                 "responsible_person": resp.responsible_person,
                 "target_date": resp.target_date.strftime('%d.%m.%Y') if resp.target_date else "",
+                "acknowledged": bool(resp.acknowledged),
             })
         return jsonify(result)
     finally:

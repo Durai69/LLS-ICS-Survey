@@ -164,7 +164,7 @@ const RemarksResponse = () => {
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         {/* Incoming Feedback Section */}
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-6">Incoming Feedback</h2>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-6">Received Feedback</h2>
           {/* Department Navigation Tabs (using buttons) */}
           <div className="mb-6">
             <div className="flex flex-wrap gap-2 mb-4">
@@ -287,7 +287,7 @@ const RemarksResponse = () => {
 
         {/* Outgoing Feedback Section */}
         <div>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-6">Outgoing Feedback</h2>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-6">Action Plan Received</h2>
           {/* Department Navigation Tabs (using buttons) */}
           <div className="mb-6">
             <div className="flex flex-wrap gap-2 mb-4">

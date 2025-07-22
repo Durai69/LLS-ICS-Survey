@@ -4,11 +4,13 @@ import axios from "axios";
 export interface CustomerFocusItem {
   id: string;
   survey_date: string;
-  department: string;
+  toDepartment: string;
+  fromDepartment: string;
   remark: string;
   action_plan: string;
   responsible_person: string;
   target_date: string;
+  acknowledged: boolean;
 }
 
 const CustomerFocusContext = createContext<{
@@ -30,7 +32,9 @@ export const CustomerFocusProvider: React.FC<{ children: React.ReactNode }> = ({
     setLoading(true);
     axios.get<CustomerFocusItem[]>("/api/remarks/customer-focus", { withCredentials: true })
       .then(res => {
-        setData(res.data);
+        // Filter out items with null or empty remark just in case
+        const filtered = res.data.filter(item => item.remark && item.remark.trim() !== "");
+        setData(filtered);
         setLoading(false);
       })
       .catch(err => {
