@@ -77,12 +77,25 @@ def get_admin_dashboard_stats():
             d["name"] for d in department_performance if d["super_overall"] < 80
         ]
 
+        # Survey attendance stats for admin dashboard pie chart
+        total_submissions = db.query(SurveySubmission).count()
+        on_time_submissions = db.query(SurveySubmission).filter(SurveySubmission.survey_attendance == 100.0).count()
+        late_submissions = db.query(SurveySubmission).filter(SurveySubmission.survey_attendance == 95.0).count()
+        missed_submissions = total_surveys_assigned - total_submissions
+
+        survey_attendance_stats = {
+            "on_time": on_time_submissions,
+            "late": late_submissions,
+            "missed": missed_submissions
+        }
+
         return jsonify({
             "total_surveys_assigned": total_surveys_assigned,
             "total_surveys_submitted": total_surveys_submitted,
             "surveys_not_submitted": surveys_not_submitted,
             "department_performance": department_performance,
-            "below_80_departments": below_80_departments
+            "below_80_departments": below_80_departments,
+            "survey_attendance_stats": survey_attendance_stats
         })
     finally:
         db.close()
@@ -143,6 +156,49 @@ def get_departments_pending_surveys():
         return jsonify({
             "total_not_submitted": total_not_submitted,
             "pending_departments": response
+        })
+    finally:
+        db.close()
+
+@dashboard_bp.route('/attendance-departments', methods=['GET'])
+@paseto_required()
+def get_attendance_departments():
+    db: Session = SessionLocal()
+    try:
+        # Query departments with on_time attendance
+        on_time_depts = (
+            db.query(Department.name)
+            .join(SurveySubmission, SurveySubmission.submitter_department_id == Department.id)
+            .filter(SurveySubmission.survey_attendance == 100.0)
+            .distinct()
+            .all()
+        )
+        # Query departments with late attendance
+        late_depts = (
+            db.query(Department.name)
+            .join(SurveySubmission, SurveySubmission.submitter_department_id == Department.id)
+            .filter(SurveySubmission.survey_attendance == 95.0)
+            .distinct()
+            .all()
+        )
+        # Query departments with missed attendance (no submission)
+        total_assigned = db.query(func.count(Survey.id)).scalar()
+        total_submitted = db.query(func.count(SurveySubmission.id)).filter(SurveySubmission.status != 'Draft').scalar()
+        missed_count = total_assigned - total_submitted
+
+        # For missed departments, find departments with no submissions
+        submitted_dept_ids = db.query(SurveySubmission.submitter_department_id).distinct()
+        missed_depts = (
+            db.query(Department.name)
+            .filter(~Department.id.in_(submitted_dept_ids))
+            .all()
+        )
+
+        return jsonify({
+            "on_time_departments": [d.name for d in on_time_depts],
+            "late_departments": [d.name for d in late_depts],
+            "missed_departments": [d.name for d in missed_depts],
+            "missed_count": missed_count
         })
     finally:
         db.close()

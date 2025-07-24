@@ -228,6 +228,38 @@ def submit_survey_response(survey_id):
         db.add(submission)
         db.flush()
 
+        # Calculate survey attendance
+        # Get permission end_date for this from_dept and to_dept
+        permission = db.query(Permission).filter(
+            Permission.from_dept_id == user_dept.id,
+            Permission.to_dept_id == survey.rated_department_id
+        ).order_by(Permission.end_date.desc()).first()
+
+        attendance = 0.0
+        if permission and permission.end_date:
+            # Ensure both datetimes are timezone-aware for comparison
+            end_date = permission.end_date
+            if end_date.tzinfo is None:
+                import datetime as dt
+                end_date = end_date.replace(tzinfo=dt.timezone.utc)
+            submission_time = submission.submitted_at
+            if submission_time.tzinfo is None:
+                import datetime as dt
+                submission_time = submission_time.replace(tzinfo=dt.timezone.utc)
+            grace_period_end = end_date + timedelta(days=7)
+
+            if submission_time <= end_date:
+                attendance = 100.0
+            elif submission_time <= grace_period_end:
+                attendance = 95.0
+            else:
+                attendance = 0.0
+
+        submission.survey_attendance = attendance
+
+        # Commit after setting attendance to avoid rollback issues
+        db.commit()
+
         for answer in answers:
             # Find the option ID for this rating
             option = db.query(Option).filter(

@@ -139,6 +139,7 @@ class SurveySubmission(Base):
     rating_description = Column(Text, nullable=True)
     suggestions = Column(Text, nullable=True)
     answers_by_category = Column(Text, nullable=True)
+    survey_attendance = Column(Float, nullable=True)  # New column for survey attendance percentage
     survey = relationship("Survey", back_populates="submissions")
     submitter = relationship("User", back_populates="survey_submissions_made")
     answers = relationship(

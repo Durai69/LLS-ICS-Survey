@@ -1,16 +1,27 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAdminDashboard } from '@/contexts/AdminDashboardContext';
 import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Cell } from 'recharts';
+import { ResponsivePie } from '@nivo/pie';
+// If you still get errors, try:
+// import { ResponsivePie } from '@nivo/pie/dist/cjs';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { TooltipProps } from 'recharts';
+import './Dashboard.css';
+import HorizontalStackedBarChart from 'react-horizontal-stacked-bar-chart';
+
+type PendingDepartment = {
+  name: string;
+  pending_count: number;
+};
+
 
 // Custom tooltip for the bar chart
 const CustomTooltip = ({ active, payload, label }: TooltipProps<any, any>) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white border rounded shadow p-2">
+      <div className="custom-tooltip-background">
         <div><strong>{label}</strong></div>
         <div>Overall : {payload[0].value}</div>
       </div>
@@ -19,15 +30,13 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps<any, any>) => {
   return null;
 };
 
-interface PendingDepartment {
-  name: string;
-  pending_count: number;
-}
+const COLORS = ['#4ade80', '#f97316', '#8b5cf6']; // green, orange, purple (changed yellow and red)
 
 const Dashboard = () => {
   const { stats, loading, error } = useAdminDashboard();
   const navigate = useNavigate();
   const [pendingDepartments, setPendingDepartments] = useState<PendingDepartment[]>([]);
+  const [surveyAttendanceStats, setSurveyAttendanceStats] = useState<{name: string, value: number}[]>([]);
 
   useEffect(() => {
     axios.get<{ total_not_submitted: number; pending_departments: PendingDepartment[] }>('/api/dashboard/pending-surveys', { withCredentials: true })
@@ -41,13 +50,21 @@ const Dashboard = () => {
       .catch(() => setPendingDepartments([]));
   }, []);
 
+  useEffect(() => {
+    if (!loading && !error && stats) {
+      const attendanceData = [
+        { name: 'On Time', value: stats.survey_attendance_stats?.on_time || 0 },
+        { name: 'Late', value: stats.survey_attendance_stats?.late || 0 },
+        { name: 'Missed', value: stats.survey_attendance_stats?.missed || 0 },
+      ];
+      setSurveyAttendanceStats(attendanceData);
+    }
+  }, [loading, error, stats]);
+
   if (loading) return <div>Loading...</div>;
   if (error || !stats) return <div className="text-red-500">{error || "No data"}</div>;
 
-  const { total_surveys_assigned, total_surveys_submitted, surveys_not_submitted, department_performance, below_80_departments } = stats;
-
-  // Departments below 80% for alerts
-  const lowRatingDepts = department_performance.filter(dept => dept.super_overall < 80);
+  const { total_surveys_assigned, total_surveys_submitted, surveys_not_submitted, department_performance, below_80_departments, attendance_departments } = stats;
 
   // Function to determine bar color based on super_overall
   const getBarColor = (entry: any) => {
@@ -70,7 +87,6 @@ const Dashboard = () => {
           Welcome to Admin Dashboard
         </p>
       </div>
-      
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
@@ -85,7 +101,6 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
-        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">
@@ -98,7 +113,6 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
-        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">
@@ -112,11 +126,10 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
-      
       {/* Charts and User Status */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-3">
         {/* Bar Chart */}
-        <Card className="col-span-1 lg:col-span-2 shadow-lg">
+        <Card className="col-span-2 shadow-lg">
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-gray-700">
               Department Performance Overview
@@ -124,7 +137,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="w-full flex justify-start">
-              <div className="w-[400px] h-[300px]">
+                <div className="w-full h-[300px] min-w-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={department_performance}
@@ -159,8 +172,9 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
+        {/* Pie Chart for Survey Attendance */}
+        {/* Moved Survey Attendance section down below Pending Surveys */}
       </div>
-      
       {/* Alerts Section */}
       <Card>
         <CardHeader>
@@ -185,7 +199,6 @@ const Dashboard = () => {
           )}
         </CardContent>
       </Card>
-      
       {/* Pending Surveys Section */}
       <Card>
         <CardHeader>
@@ -210,7 +223,101 @@ const Dashboard = () => {
           )}
         </CardContent>
       </Card>
-      
+      {/* Survey Attendance Section Moved Here */}
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-700">
+            Survey Attendance
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="pie-chart-container">
+            <ResponsivePie
+              data={surveyAttendanceStats.map((d) => ({
+                id: d.name,
+                label: d.name,
+                value: d.value,
+              }))}
+              colors={['#4ade80', '#f97316', '#8b5cf6']} // Changed yellow to orange, keep purple for missed
+              margin={{ top: 40, right: 80, bottom: 40, left: 80 }}
+              innerRadius={0.5}
+              padAngle={1}
+              cornerRadius={3}
+              borderWidth={1}
+              borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
+              enableArcLabels={true}
+              arcLabelsSkipAngle={10}
+              arcLabelsTextColor="#333333"
+              arcLinkLabelsSkipAngle={10}
+              arcLinkLabelsTextColor="#333333"
+              arcLinkLabelsThickness={2}
+              arcLinkLabelsColor={{ from: 'color' }}
+              tooltip={({ datum }) => (
+                <div className="tooltip-content" style={{ color: datum.color }}>
+                  <strong>{datum.label}</strong>: {datum.value}
+                </div>
+              )}
+              legends={[
+                {
+                  anchor: 'bottom',
+                  direction: 'row',
+                  justify: false,
+                  translateY: 36,
+                  itemWidth: 100,
+                  itemHeight: 18,
+                  itemsSpacing: 0,
+                  symbolSize: 18,
+                  symbolShape: 'circle',
+                },
+              ]}
+              onClick={(data, event) => {
+                alert(`Clicked on ${data.id}: ${data.value}`);
+              }}
+              role="img"
+              arcLabel="Survey attendance pie chart"
+            />
+          </div>
+          {/* Subsections for On Time, Late, Missed with department names */}
+          <div className="mt-4 space-y-4">
+            <div>
+              <h4 className="font-semibold text-green-600">On Time Submission</h4>
+              {attendance_departments?.on_time_departments.length ? (
+                <ul className="list-disc list-inside text-sm text-gray-700">
+                  {attendance_departments.on_time_departments.map((dept) => (
+                    <li key={dept}>{dept}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500 text-sm">No departments with on time submissions.</p>
+              )}
+            </div>
+            <div>
+              <h4 className="font-semibold text-orange-600">Late Submission</h4>
+              {attendance_departments?.late_departments.length ? (
+                <ul className="list-disc list-inside text-sm text-gray-700">
+                  {attendance_departments.late_departments.map((dept) => (
+                    <li key={dept}>{dept}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500 text-sm">No departments with late submissions.</p>
+              )}
+            </div>
+            <div>
+              <h4 className="font-semibold text-purple-600">Not Submitted</h4>
+              {attendance_departments?.missed_departments.length ? (
+                <ul className="list-disc list-inside text-sm text-gray-700">
+                  {attendance_departments.missed_departments.map((dept) => (
+                    <li key={dept}>{dept}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500 text-sm">No departments with missed submissions.</p>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       {/* Summary */}
       <div className="mt-6 bg-muted p-4 rounded-md">
         <h3 className="text-sm font-medium mb-2">Summary</h3>

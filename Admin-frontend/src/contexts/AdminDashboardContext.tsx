@@ -13,6 +13,17 @@ interface AdminDashboardStats {
   surveys_not_submitted: number;
   department_performance: DepartmentPerformance[];
   below_80_departments: string[];
+  survey_attendance_stats?: {
+    on_time: number;
+    late: number;
+    missed: number;
+  };
+  attendance_departments?: {
+    on_time_departments: string[];
+    late_departments: string[];
+    missed_departments: string[];
+    missed_count: number;
+  };
 }
 
 interface AdminDashboardContextType {
@@ -35,7 +46,8 @@ export const AdminDashboardProvider = ({ children }: { children: ReactNode }) =>
     setError(null);
     try {
       const res = await axios.get('/api/dashboard/admin-stats', { withCredentials: true });
-      setStats(res.data as AdminDashboardStats);
+      const attendanceRes = await axios.get('/api/dashboard/attendance-departments', { withCredentials: true });
+      setStats(Object.assign({}, res.data, { attendance_departments: attendanceRes.data }) as AdminDashboardStats);
     } catch (err: any) {
       setError('Failed to load dashboard stats');
     } finally {

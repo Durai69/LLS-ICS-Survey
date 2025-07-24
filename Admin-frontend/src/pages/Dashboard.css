@@ -1,0 +1,18 @@
+.pie-chart-container {
+  height: 300px;
+}
+
+.tooltip-content {
+  padding: 12px;
+  background: #222222;
+  border-radius: 4px;
+  color: var(--tooltip-text-color, inherit); /* Use CSS variable with a fallback */
+  font-weight: 600;
+}
+
+.custom-tooltip-background {
+  background-color: white;
+  border-radius: 0.25rem; /* Equivalent to rounded */
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* Equivalent to shadow */
+  padding: 0.5rem; /* Equivalent to p-2 */
+}
