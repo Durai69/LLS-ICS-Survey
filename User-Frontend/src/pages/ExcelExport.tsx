@@ -147,24 +147,49 @@ const ExcelExport = () => {
               </Button>
             </div>
 
+
+            
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-lg font-medium">My Submitted Action Plans</div>
+                <div className="text-lg font-medium">My Action Plan</div>
                 <div className="text-gray-600 text-sm max-w-xl">
-                  This file provides a detailed view of all feedback and action plans related to your submissions, including:
+                  This file contains action plans submitted by your department, including:
                   <ul className="list-disc ml-6">
-                    <li>Who rated you and which department gave the rating</li>
-                    <li>Rating value and category</li>
-                    <li>Explanation for poor performance (if any)</li>
-                    <li>Action plan proposed by the managed department</li>
-                    <li>Responsible person for the action plan</li>
-                    <li>Target date for resolution</li>
-                    <li>Whether the managed department acknowledged the feedback</li>
+                    <li>Serial number and date of survey</li>
+                    <li>Department that provided feedback</li>
+                    <li>Problem or suggestion for improvement (reasons for low ratings)</li>
+                    <li>Action plan details</li>
+                    <li>Responsible person assigned</li>
+                    <li>Target date for completion</li>
+                    <li>Current status (acknowledged or not)</li>
                   </ul>
-                  <span className="block mt-2">Purpose: Track all remarks, responses, and accountability for improvements.</span>
+                  <span className="block mt-2">Purpose: Track all action plans your department needs to implement.</span>
                 </div>
               </div>
-              <Button onClick={() => handleDownload('My Submitted Action Plans')} variant="outline" className="text-green-600 border-green-600">
+              <Button onClick={() => handleDownload('My Action Plan')} variant="outline" className="text-green-600 border-green-600">
+                Download
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+              </Button>
+            </div>
+
+            {/* My Overall Ratings Download Card */}
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-lg font-medium">My Overall Ratings</div>
+                <div className="text-gray-600 text-sm max-w-xl">
+                  This file provides an overall summary of ratings received by your department, grouped by evaluation criteria and sub-criteria, with department-wise breakdown and summary rows:
+                  <ul className="list-disc ml-6">
+                    <li>Major groupings: Quality, Delivery, Communication, Responsiveness, Improvement</li>
+                    <li>Sub-criteria for each main criteria (e.g., Understands Customer needs, Delivers promptly, etc.)</li>
+                    <li>Department columns (who rated your department)</li>
+                    <li>Summary rows: Sum of Q, D, C, R, I, Total, Percentage</li>
+                  </ul>
+                  <span className="block mt-2">Purpose: Analyze overall performance and satisfaction as rated by other departments.</span>
+                </div>
+              </div>
+              <Button onClick={() => handleDownload('My Overall Ratings')} variant="outline" className="text-green-600 border-green-600">
                 Download
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
