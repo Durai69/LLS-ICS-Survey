@@ -6,7 +6,7 @@
   padding: 12px;
   background: #222222;
   border-radius: 4px;
-  color: var(--tooltip-text-color, inherit); /* Use CSS variable with a fallback */
+  color: white; /* Ensure this is set to white */
   font-weight: 600;
 }
 

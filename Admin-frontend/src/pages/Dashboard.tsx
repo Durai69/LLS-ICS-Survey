@@ -2,8 +2,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAdminDashboard } from '@/contexts/AdminDashboardContext';
 import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Cell } from 'recharts';
 import { ResponsivePie } from '@nivo/pie';
-// If you still get errors, try:
-// import { ResponsivePie } from '@nivo/pie/dist/cjs';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
@@ -16,7 +14,6 @@ type PendingDepartment = {
   pending_count: number;
 };
 
-
 // Custom tooltip for the bar chart
 const CustomTooltip = ({ active, payload, label }: TooltipProps<any, any>) => {
   if (active && payload && payload.length) {
@@ -28,6 +25,27 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps<any, any>) => {
     );
   }
   return null;
+};
+
+// New custom tooltip component for the Pie Chart
+interface PieTooltipProps {
+  datum: {
+    id: string | number;
+    label: string | number;
+    value: number;
+    color: string; // The hex color string from Nivo (still passed but not used for text color)
+  };
+}
+
+// Removed the getTooltipColorClass helper function as it's no longer needed
+
+const PieTooltip = ({ datum }: PieTooltipProps) => {
+  return (
+    // Apply only the base tooltip-content class; color is now handled by CSS directly
+    <div className="tooltip-content">
+      <strong>{datum.label}</strong>: {datum.value}
+    </div>
+  );
 };
 
 const COLORS = ['#4ade80', '#f97316', '#8b5cf6']; // green, orange, purple (changed yellow and red)
@@ -238,7 +256,7 @@ const Dashboard = () => {
                 label: d.name,
                 value: d.value,
               }))}
-              colors={['#4ade80', '#f97316', '#8b5cf6']} // Changed yellow to orange, keep purple for missed
+              colors={COLORS} // Use the COLORS array
               margin={{ top: 40, right: 80, bottom: 40, left: 80 }}
               innerRadius={0.5}
               padAngle={1}
@@ -253,9 +271,8 @@ const Dashboard = () => {
               arcLinkLabelsThickness={2}
               arcLinkLabelsColor={{ from: 'color' }}
               tooltip={({ datum }) => (
-                <div className="tooltip-content" style={{ color: datum.color }}>
-                  <strong>{datum.label}</strong>: {datum.value}
-                </div>
+                // Use the new PieTooltip component here
+                <PieTooltip datum={datum} />
               )}
               legends={[
                 {
@@ -271,7 +288,8 @@ const Dashboard = () => {
                 },
               ]}
               onClick={(data, event) => {
-                alert(`Clicked on ${data.id}: ${data.value}`);
+                // Replace alert with a custom modal or message box if needed
+                console.log(`Clicked on ${data.id}: ${data.value}`);
               }}
               role="img"
               arcLabel="Survey attendance pie chart"

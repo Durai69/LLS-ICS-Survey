@@ -4,12 +4,14 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import Loading from '@/components/ui/Loading';
 
 const AppLayout = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Check for authentication on mount and route changes
   useEffect(() => {
@@ -18,8 +20,21 @@ const AppLayout = () => {
     }
   }, [isAuthenticated, navigate, location.pathname]);
 
+  // Set loading true on location change, then false after short delay
+  useEffect(() => {
+    setLoading(true);
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 300); // 300ms delay to simulate loading
+    return () => clearTimeout(timer);
+  }, [location]);
+
   if (!isAuthenticated) {
     return null;
+  }
+
+  if (loading) {
+    return <Loading />;
   }
 
   return (
