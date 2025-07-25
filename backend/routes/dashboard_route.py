@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from backend.database import SessionLocal
-from backend.models import SurveyResponse, Department, User, Survey, SurveySubmission
+from backend.models import SurveyResponse, Department, User, Survey, SurveySubmission, Permission
 from backend.utils.paseto_utils import paseto_required, get_paseto_identity
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/api/dashboard')
@@ -163,6 +163,7 @@ def get_departments_pending_surveys():
 @dashboard_bp.route('/attendance-departments', methods=['GET'])
 @paseto_required()
 def get_attendance_departments():
+    from datetime import timedelta
     db: Session = SessionLocal()
     try:
         # Query departments with on_time attendance
@@ -181,23 +182,63 @@ def get_attendance_departments():
             .distinct()
             .all()
         )
-        # Query departments with missed attendance (no submission)
+        # Query all departments
+        all_departments = db.query(Department).all()
+
+        # Get permission end dates for departments
+        permissions = db.query(Permission).all()
+
+        # Get submissions grouped by department
+        submissions = db.query(SurveySubmission).filter(SurveySubmission.status != 'Draft').all()
+
+        # Build a map of dept_id to permission end_date
+        permission_map = {p.to_dept_id: p.end_date for p in permissions}
+
+        # Build a map of dept_id to list of submission dates
+        submission_map = {}
+        for sub in submissions:
+            submission_map.setdefault(sub.submitter_department_id, []).append(sub.submitted_at)
+
+        grace_period = timedelta(days=7)
+
+        missed_departments = []
+        from datetime import datetime
+        now = datetime.utcnow()
+        for dept in all_departments:
+            end_date = permission_map.get(dept.id)
+            print(f"Department: {dept.name}, Permission End Date: {end_date}")
+            if not end_date:
+                # If no permission end date, consider department missed
+                print(f"Department {dept.name} has no permission end date, marked as missed")
+                missed_departments.append(dept.name)
+                continue
+            grace_end = end_date + grace_period
+            print(f"Department: {dept.name}, Grace Period End: {grace_end}, Current Time: {now}")
+            # Only consider missed if current time is past grace period end
+            if now <= grace_end:
+                print(f"Department: {dept.name} is still within grace period, not missed")
+                continue
+            # Check if any submission is within grace period
+            submitted_within_grace = False
+            for sub_date in submission_map.get(dept.id, []):
+                print(f"Department: {dept.name}, Submission Date: {sub_date}")
+                if sub_date and sub_date <= grace_end:
+                    submitted_within_grace = True
+                    print(f"Department: {dept.name} has submission within grace period")
+                    break
+            if not submitted_within_grace:
+                print(f"Department: {dept.name} has no submission within grace period, marked as missed")
+                missed_departments.append(dept.name)
+
         total_assigned = db.query(func.count(Survey.id)).scalar()
         total_submitted = db.query(func.count(SurveySubmission.id)).filter(SurveySubmission.status != 'Draft').scalar()
-        missed_count = total_assigned - total_submitted
-
-        # For missed departments, find departments with no submissions
-        submitted_dept_ids = db.query(SurveySubmission.submitter_department_id).distinct()
-        missed_depts = (
-            db.query(Department.name)
-            .filter(~Department.id.in_(submitted_dept_ids))
-            .all()
-        )
+        # Update missed_count to count of missed_departments after grace period
+        missed_count = len(missed_departments)
 
         return jsonify({
             "on_time_departments": [d.name for d in on_time_depts],
             "late_departments": [d.name for d in late_depts],
-            "missed_departments": [d.name for d in missed_depts],
+            "missed_departments": missed_departments,
             "missed_count": missed_count
         })
     finally:

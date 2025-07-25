@@ -71,9 +71,9 @@ const Dashboard = () => {
   useEffect(() => {
     if (!loading && !error && stats) {
       const attendanceData = [
-        { name: 'On Time', value: stats.survey_attendance_stats?.on_time || 0 },
-        { name: 'Late', value: stats.survey_attendance_stats?.late || 0 },
-        { name: 'Missed', value: stats.survey_attendance_stats?.missed || 0 },
+        { name: 'On Time', value: stats.attendance_departments?.on_time_departments.length || 0 },
+        { name: 'Late', value: stats.attendance_departments?.late_departments.length || 0 },
+        { name: 'Missed', value: stats.attendance_departments?.missed_count || 0 },
       ];
       setSurveyAttendanceStats(attendanceData);
     }
@@ -248,93 +248,95 @@ const Dashboard = () => {
             Survey Attendance
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="pie-chart-container">
-            <ResponsivePie
-              data={surveyAttendanceStats.map((d) => ({
-                id: d.name,
-                label: d.name,
-                value: d.value,
-              }))}
-              colors={COLORS} // Use the COLORS array
-              margin={{ top: 40, right: 80, bottom: 40, left: 80 }}
-              innerRadius={0.5}
-              padAngle={1}
-              cornerRadius={3}
-              borderWidth={1}
-              borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
-              enableArcLabels={true}
-              arcLabelsSkipAngle={10}
-              arcLabelsTextColor="#333333"
-              arcLinkLabelsSkipAngle={10}
-              arcLinkLabelsTextColor="#333333"
-              arcLinkLabelsThickness={2}
-              arcLinkLabelsColor={{ from: 'color' }}
-              tooltip={({ datum }) => (
-                // Use the new PieTooltip component here
-                <PieTooltip datum={datum} />
-              )}
-              legends={[
-                {
-                  anchor: 'bottom',
-                  direction: 'row',
-                  justify: false,
-                  translateY: 36,
-                  itemWidth: 100,
-                  itemHeight: 18,
-                  itemsSpacing: 0,
-                  symbolSize: 18,
-                  symbolShape: 'circle',
-                },
-              ]}
-              onClick={(data, event) => {
-                // Replace alert with a custom modal or message box if needed
-                console.log(`Clicked on ${data.id}: ${data.value}`);
-              }}
-              role="img"
-              arcLabel="Survey attendance pie chart"
-            />
-          </div>
-          {/* Subsections for On Time, Late, Missed with department names */}
-          <div className="mt-4 space-y-4">
-            <div>
-              <h4 className="font-semibold text-green-600">On Time Submission</h4>
-              {attendance_departments?.on_time_departments.length ? (
-                <ul className="list-disc list-inside text-sm text-gray-700">
-                  {attendance_departments.on_time_departments.map((dept) => (
-                    <li key={dept}>{dept}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-500 text-sm">No departments with on time submissions.</p>
-              )}
+          <CardContent>
+            <div className="pie-chart-container">
+              <ResponsivePie
+                data={surveyAttendanceStats.map((d) => ({
+                  id: d.name,
+                  label: d.name,
+                  value: d.value,
+                }))}
+                colors={COLORS} // Use the COLORS array
+                margin={{ top: 40, right: 80, bottom: 40, left: 80 }}
+                innerRadius={0.5}
+                padAngle={1}
+                cornerRadius={3}
+                borderWidth={1}
+                borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
+                enableArcLabels={true}
+                arcLabelsSkipAngle={10}
+                arcLabelsTextColor="#333333"
+                arcLinkLabelsSkipAngle={10}
+                arcLinkLabelsTextColor="#333333"
+                arcLinkLabelsThickness={2}
+                arcLinkLabelsColor={{ from: 'color' }}
+                tooltip={({ datum }) => (
+                  // Use the new PieTooltip component here
+                  <PieTooltip datum={datum} />
+                )}
+                legends={[
+                  {
+                    anchor: 'right',
+                    direction: 'column',
+                    justify: false,
+                    translateX: 40,
+                    translateY: 0,
+                    itemWidth: 100,
+                    itemHeight: 18,
+                    itemsSpacing: 10,
+                    symbolSize: 18,
+                    symbolShape: 'circle',
+                  },
+                ]}
+                onClick={(data, event) => {
+                  // Replace alert with a custom modal or message box if needed
+                  console.log(`Clicked on ${data.id}: ${data.value}`);
+                }}
+                role="img"
+                arcLabel="Survey attendance pie chart"
+              />
             </div>
-            <div>
-              <h4 className="font-semibold text-orange-600">Late Submission</h4>
-              {attendance_departments?.late_departments.length ? (
-                <ul className="list-disc list-inside text-sm text-gray-700">
-                  {attendance_departments.late_departments.map((dept) => (
-                    <li key={dept}>{dept}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-500 text-sm">No departments with late submissions.</p>
-              )}
+            {/* Subsections for On Time, Late, Missed with department names */}
+            <div className="mt-4 space-y-4">
+              <div>
+                <h4 className="font-semibold text-green-600">On Time Submission</h4>
+                {attendance_departments?.on_time_departments.length ? (
+                  <ul className="list-disc list-inside text-sm text-gray-700">
+                    {attendance_departments.on_time_departments.map((dept) => (
+                      <li key={dept}>{dept}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-500 text-sm">No departments with on time submissions.</p>
+                )}
+              </div>
+              <div>
+                <h4 className="font-semibold text-orange-600">Late Submission</h4>
+                {attendance_departments?.late_departments.length ? (
+                  <ul className="list-disc list-inside text-sm text-gray-700">
+                    {attendance_departments.late_departments.map((dept) => (
+                      <li key={dept}>{dept}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-500 text-sm">No departments with late submissions.</p>
+                )}
+              </div>
+              <div>
+                <h4 className="font-semibold text-purple-600">Missed</h4>
+                {attendance_departments?.missed_departments.length ? (
+                  <ul className="list-disc list-inside text-sm text-gray-700">
+                    {attendance_departments.missed_departments.map((dept) => (
+                      // Only show departments that truly missed after grace period
+                      <li key={dept}>{dept}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-500 text-sm">No departments with missed submissions.</p>
+                )}
+              </div>
             </div>
-            <div>
-              <h4 className="font-semibold text-purple-600">Not Submitted</h4>
-              {attendance_departments?.missed_departments.length ? (
-                <ul className="list-disc list-inside text-sm text-gray-700">
-                  {attendance_departments.missed_departments.map((dept) => (
-                    <li key={dept}>{dept}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-500 text-sm">No departments with missed submissions.</p>
-              )}
-            </div>
-          </div>
-        </CardContent>
+          </CardContent>
       </Card>
       {/* Summary */}
       <div className="mt-6 bg-muted p-4 rounded-md">
