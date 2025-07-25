@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { TooltipProps } from 'recharts';
 import './Dashboard.css';
-import HorizontalStackedBarChart from 'react-horizontal-stacked-bar-chart';
 
 type PendingDepartment = {
   name: string;

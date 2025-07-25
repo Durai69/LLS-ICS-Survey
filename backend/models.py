@@ -77,6 +77,11 @@ class Survey(Base):
     managing_department_id = Column(Integer, ForeignKey('dbo.departments.id'), nullable=True)
     managing_department = relationship("Department", foreign_keys=[managing_department_id], back_populates="surveys_managed")
 
+  
+    period_id = Column(Integer, ForeignKey('dbo.periods.id'), nullable=False)
+    period = relationship("Period")
+
+
     questions = relationship("Question", back_populates="survey", cascade="all, delete-orphan", order_by="Question.order")
     submissions = relationship("SurveySubmission", back_populates="survey", cascade="all, delete-orphan")
 
